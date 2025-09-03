@@ -26,9 +26,28 @@ def get_driver():
     proxy = os.getenv("PROXY")  # Example: "http://username:password@proxyserver:port"
     
     try:
-        driver = Driver(browser="chrome", proxy=proxy, uc=True, no_sandbox=True, window_size="1920,1080", disable_gpu=True,
-                        headless=True,
-                        incognito=True)
+        driver = Driver(browser="chrome",
+        proxy=proxy,
+        uc=True,
+        no_sandbox=True,
+        window_size="1920,1080",
+        disable_gpu=True,
+        headless=True,
+        incognito=True,
+        disable_gpu=True,
+        disable_dev_shm_usage=True,
+        disable_web_security=True,
+        disable_features="VizDisplayCompositor",
+        chromium_arg = [
+            "--disable-gpu",
+            "--disable-dev-shm-usage", 
+            "--disable-web-security",
+            "--disable-features=VizDisplayCompositor",
+            "--no-sandbox",
+            "--headless",
+            "--window-size=1920,1080"
+        ]
+        )
         driver.implicitly_wait(10)
         logger.info("✅ Web driver initialized successfully")
         return driver
