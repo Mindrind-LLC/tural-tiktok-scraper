@@ -492,3 +492,699 @@
 2025-08-27 16:09:48,959 - MainThread - INFO - Scheduler has been shut down
 2025-08-27 16:09:48,959 - MainThread - INFO - 📅 Scheduler stopped
 2025-08-27 16:09:48,960 - MainThread - INFO - 👋 Shutdown complete
+2025-09-03 17:17:03,529 - MainThread - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-03 17:17:03,531 - MainThread - INFO - Added job "Daily TikTok Scraping" to job store "default"
+2025-09-03 17:17:03,531 - MainThread - INFO - Scheduler started
+2025-09-03 17:17:03,531 - MainThread - INFO - 📅 Scheduler started - cron job will run every 24 hours
+2025-09-03 17:17:03,532 - MainThread - INFO - Added job "Task Cleanup" to job store "default"
+2025-09-03 17:17:03,532 - MainThread - INFO - 🧹 Cleanup job scheduled - runs every 6 hours
+2025-09-03 17:17:03,532 - MainThread - INFO - Added job "Health Monitoring" to job store "default"
+2025-09-03 17:17:03,532 - MainThread - INFO - 💓 Health monitor scheduled - runs every 30 minutes
+2025-09-03 17:17:03,604 - MainThread - INFO - 🚀 Starting TikTok Scraper Triggers System...
+2025-09-03 17:17:03,604 - MainThread - INFO - 📁 Using modular architecture:
+2025-09-03 17:17:03,604 - MainThread - INFO -    - api.py: FastAPI endpoints and LLM integration
+2025-09-03 17:17:03,604 - MainThread - INFO -    - task_manager.py: Task management and threading
+2025-09-03 17:17:03,604 - MainThread - INFO -    - triggers.py: Cron jobs and scheduling
+2025-09-03 17:17:33,878 - MainThread - INFO - Processing LLM query: Find TikTok profiles about travel with more than 10k followers
+2025-09-03 17:17:35,499 - MainThread - INFO - LLM parsed query to filters: hashtag='travel' country=None min_followers=10000 min_likes=None limit=100
+2025-09-03 17:17:35,504 - MainThread - INFO - API request: Starting scraper for hashtag: test
+2025-09-03 17:17:35,504 - MainThread - INFO - Task task_1756901855504_140704427884416 added to queue with priority 1
+2025-09-03 17:17:35,505 - MainThread - INFO - Task task_1756901855504_140704427884416 added to manager
+2025-09-03 17:17:35,505 - MainThread - INFO - Task task_1756901855504_140704427884416 queued successfully
+2025-09-03 17:17:35,602 - Thread-1 (process_scraper_queue) - INFO - Active thread added: task_1756901855504_140704427884416 (Scraper-task_1756901855504_140704427884416)
+2025-09-03 17:17:35,602 - Scraper-task_1756901855504_140704427884416 - INFO - [Scraper-task_1756901855504_140704427884416] Starting scraper task task_1756901855504_140704427884416 for hashtag: test
+2025-09-03 17:17:35,602 - Scraper-task_1756901855504_140704427884416 - INFO - Task task_1756901855504_140704427884416 status updated to: running
+2025-09-03 17:17:35,602 - Scraper-task_1756901855504_140704427884416 - INFO - [Scraper-task_1756901855504_140704427884416] Executing scraper for hashtag: test
+2025-09-03 17:17:35,602 - Thread-1 (process_scraper_queue) - INFO - Started thread for task task_1756901855504_140704427884416, active threads: 1
+2025-09-03 17:17:35,603 - Scraper-task_1756901855504_140704427884416 - INFO - 🚀 Starting TikTok profile scraping for hashtag: test
+2025-09-03 17:17:35,603 - Scraper-task_1756901855504_140704427884416 - INFO - Target profiles: 10
+2025-09-03 17:17:38,499 - Scraper-task_1756901855504_140704427884416 - INFO - Found 298 existing usernames in database
+2025-09-03 17:17:38,499 - Scraper-task_1756901855504_140704427884416 - INFO - 🚗 Initializing web driver...
+2025-09-03 17:17:38,765 - MainThread - INFO - Task task_1756901858764_140704427884416 added to queue with priority 1
+2025-09-03 17:17:38,765 - MainThread - INFO - Task task_1756901858764_140704427884416 added to manager
+2025-09-03 17:17:38,765 - MainThread - INFO - LLM-initiated scraper task task_1756901858764_140704427884416 queued for hashtag: foodblogger
+2025-09-03 17:17:39,121 - MainThread - INFO - Retrieved 0 profiles with filters: hashtag=travel, country=None, min_followers=None, min_likes=None
+2025-09-03 17:17:39,610 - Thread-1 (process_scraper_queue) - INFO - Active thread added: task_1756901858764_140704427884416 (Scraper-task_1756901858764_140704427884416)
+2025-09-03 17:17:39,610 - Scraper-task_1756901858764_140704427884416 - INFO - [Scraper-task_1756901858764_140704427884416] Starting scraper task task_1756901858764_140704427884416 for hashtag: foodblogger
+2025-09-03 17:17:39,610 - Thread-1 (process_scraper_queue) - INFO - Started thread for task task_1756901858764_140704427884416, active threads: 2
+2025-09-03 17:17:39,610 - Scraper-task_1756901858764_140704427884416 - INFO - Task task_1756901858764_140704427884416 status updated to: running
+2025-09-03 17:17:39,611 - Scraper-task_1756901858764_140704427884416 - INFO - [Scraper-task_1756901858764_140704427884416] Executing scraper for hashtag: foodblogger
+2025-09-03 17:17:39,611 - Scraper-task_1756901858764_140704427884416 - INFO - 🚀 Starting TikTok profile scraping for hashtag: foodblogger
+2025-09-03 17:17:39,611 - Scraper-task_1756901858764_140704427884416 - INFO - Target profiles: 50
+2025-09-03 17:17:40,502 - MainThread - INFO - Advanced search for 'travel' returned 5 profiles
+2025-09-03 17:17:40,509 - MainThread - INFO - Processing AI query: Find profiles with travel content and high followers
+2025-09-03 17:17:41,477 - Scraper-task_1756901858764_140704427884416 - INFO - Found 298 existing usernames in database
+2025-09-03 17:17:41,478 - Scraper-task_1756901858764_140704427884416 - INFO - 🚗 Initializing web driver...
+2025-09-03 17:17:44,702 - MainThread - INFO - LLM parsed query to filters: hashtag='travel' country=None min_followers=None min_likes=None limit=100
+2025-09-03 17:17:45,088 - MainThread - INFO - AI search returned 1 profiles for query: Find profiles with travel content and high followers
+2025-09-03 17:18:02,200 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Web driver initialized successfully
+2025-09-03 17:18:02,201 - Scraper-task_1756901858764_140704427884416 - INFO - ✅ Web driver initialized successfully
+2025-09-03 17:18:02,222 - Scraper-task_1756901855504_140704427884416 - INFO - 🌍 Generating country hashtag variations for: test
+2025-09-03 17:18:02,246 - Scraper-task_1756901858764_140704427884416 - INFO - 🌍 Generating country hashtag variations for: foodblogger
+2025-09-03 17:18:02,247 - Scraper-task_1756901855504_140704427884416 - INFO - Generated 80 hashtag variations
+2025-09-03 17:18:02,285 - Scraper-task_1756901858764_140704427884416 - INFO - Generated 80 hashtag variations
+2025-09-03 17:18:02,316 - Scraper-task_1756901855504_140704427884416 - INFO - 📥 Phase 1: Collecting profile URLs...
+2025-09-03 17:18:02,316 - Scraper-task_1756901858764_140704427884416 - INFO - 📥 Phase 1: Collecting profile URLs...
+2025-09-03 17:18:02,335 - Scraper-task_1756901855504_140704427884416 - INFO - 🎬 Collecting profiles for #testusa (Country: usa)
+2025-09-03 17:18:02,355 - Scraper-task_1756901858764_140704427884416 - INFO - 🎬 Collecting profiles for #foodbloggerusa (Country: usa)
+2025-09-03 17:18:43,634 - Scraper-task_1756901855504_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/testusa
+2025-09-03 17:18:45,957 - Scraper-task_1756901858764_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/foodbloggerusa
+2025-09-03 17:18:50,203 - Scraper-task_1756901855504_140704427884416 - INFO - Found 60 video cards for #testusa (scroll #1)
+2025-09-03 17:18:50,419 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Reached target of 10 profiles for #testusa
+2025-09-03 17:18:50,419 - Scraper-task_1756901855504_140704427884416 - INFO - Reached target profile count, stopping collection
+2025-09-03 17:18:50,419 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Phase 1 completed: 10 profiles collected
+2025-09-03 17:18:50,419 - Scraper-task_1756901855504_140704427884416 - INFO - 🔍 Phase 2: Scraping individual profiles...
+2025-09-03 17:18:50,419 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 1/10: https://www.tiktok.com/@taysfoodtour (Country: usa)
+2025-09-03 17:19:03,532 - Scraper-task_1756901858764_140704427884416 - INFO - Found 37 video cards for #foodbloggerusa (scroll #1)
+2025-09-03 17:19:06,309 - Scraper-task_1756901858764_140704427884416 - INFO - Found 53 video cards for #foodbloggerusa (scroll #2)
+2025-09-03 17:19:08,057 - Scraper-task_1756901855504_140704427884416 - INFO - ⏭️ Skipping taysfoodtour - already in database
+2025-09-03 17:19:08,057 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 2/10: https://www.tiktok.com/@tallzz_ (Country: usa)
+2025-09-03 17:19:11,969 - Scraper-task_1756901858764_140704427884416 - INFO - Found 38 video cards for #foodbloggerusa (scroll #3)
+2025-09-03 17:19:15,009 - Scraper-task_1756901858764_140704427884416 - INFO - Found 54 video cards for #foodbloggerusa (scroll #4)
+2025-09-03 17:19:15,978 - Scraper-task_1756901855504_140704427884416 - INFO - ⏭️ Skipping tallzz_ - already in database
+2025-09-03 17:19:15,979 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 3/10: https://www.tiktok.com/@jacksdiningroom (Country: usa)
+2025-09-03 17:19:20,338 - Scraper-task_1756901858764_140704427884416 - INFO - Found 38 video cards for #foodbloggerusa (scroll #5)
+2025-09-03 17:19:22,845 - Scraper-task_1756901858764_140704427884416 - INFO - Found 52 video cards for #foodbloggerusa (scroll #6)
+2025-09-03 17:19:22,989 - Scraper-task_1756901855504_140704427884416 - INFO - ⏭️ Skipping jacksdiningroom - already in database
+2025-09-03 17:19:22,990 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 4/10: https://www.tiktok.com/@devourpower (Country: usa)
+2025-09-03 17:19:26,734 - Scraper-task_1756901858764_140704427884416 - INFO - Found 38 video cards for #foodbloggerusa (scroll #7)
+2025-09-03 17:19:29,389 - Scraper-task_1756901855504_140704427884416 - INFO - ⏭️ Skipping devourpower - already in database
+2025-09-03 17:19:29,390 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 5/10: https://www.tiktok.com/@2tastebuds (Country: usa)
+2025-09-03 17:19:32,514 - Scraper-task_1756901858764_140704427884416 - INFO - Found 35 video cards for #foodbloggerusa (scroll #8)
+2025-09-03 17:19:35,327 - Scraper-task_1756901858764_140704427884416 - INFO - Found 51 video cards for #foodbloggerusa (scroll #9)
+2025-09-03 17:19:35,646 - Scraper-task_1756901855504_140704427884416 - INFO - Processing profile: 2tastebuds (1/10)
+2025-09-03 17:19:35,760 - Scraper-task_1756901855504_140704427884416 - INFO - 💾 Saving profile 2tastebuds to Airtable...
+2025-09-03 17:19:36,503 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Profile 2tastebuds saved successfully
+2025-09-03 17:19:36,504 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 6/10: https://www.tiktok.com/@nate_eatz (Country: usa)
+2025-09-03 17:19:39,711 - Scraper-task_1756901858764_140704427884416 - INFO - Found 36 video cards for #foodbloggerusa (scroll #10)
+2025-09-03 17:19:42,342 - Scraper-task_1756901855504_140704427884416 - INFO - ⏭️ Skipping nate_eatz - already in database
+2025-09-03 17:19:42,342 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 7/10: https://www.tiktok.com/@zackaryeats (Country: usa)
+2025-09-03 17:19:45,872 - Scraper-task_1756901858764_140704427884416 - INFO - Found 38 video cards for #foodbloggerusa (scroll #11)
+2025-09-03 17:19:47,797 - Scraper-task_1756901855504_140704427884416 - INFO - Processing profile: zackaryeats (2/10)
+2025-09-03 17:19:48,234 - Scraper-task_1756901855504_140704427884416 - INFO - 💾 Saving profile zackaryeats to Airtable...
+2025-09-03 17:19:48,688 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Profile zackaryeats saved successfully
+2025-09-03 17:19:48,688 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 8/10: https://www.tiktok.com/@explorewithgg (Country: usa)
+2025-09-03 17:19:52,212 - Scraper-task_1756901858764_140704427884416 - INFO - Found 36 video cards for #foodbloggerusa (scroll #12)
+2025-09-03 17:19:54,028 - Scraper-task_1756901855504_140704427884416 - INFO - Processing profile: explorewithgg (3/10)
+2025-09-03 17:19:54,289 - Scraper-task_1756901855504_140704427884416 - INFO - 💾 Saving profile explorewithgg to Airtable...
+2025-09-03 17:19:54,752 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Profile explorewithgg saved successfully
+2025-09-03 17:19:54,752 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 9/10: https://www.tiktok.com/@cabreranali (Country: usa)
+2025-09-03 17:19:54,794 - Scraper-task_1756901858764_140704427884416 - INFO - Found 52 video cards for #foodbloggerusa (scroll #13)
+2025-09-03 17:19:58,134 - Scraper-task_1756901858764_140704427884416 - INFO - Found 38 video cards for #foodbloggerusa (scroll #14)
+2025-09-03 17:20:01,178 - Scraper-task_1756901858764_140704427884416 - INFO - Found 54 video cards for #foodbloggerusa (scroll #15)
+2025-09-03 17:20:01,675 - Scraper-task_1756901855504_140704427884416 - INFO - Processing profile: cabreranali (4/10)
+2025-09-03 17:20:01,756 - Scraper-task_1756901855504_140704427884416 - INFO - 💾 Saving profile cabreranali to Airtable...
+2025-09-03 17:20:02,312 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Profile cabreranali saved successfully
+2025-09-03 17:20:02,312 - Scraper-task_1756901855504_140704427884416 - INFO - Scraping profile 10/10: https://www.tiktok.com/@serinaamadee.eats (Country: usa)
+2025-09-03 17:20:05,723 - Scraper-task_1756901858764_140704427884416 - INFO - Found 36 video cards for #foodbloggerusa (scroll #16)
+2025-09-03 17:20:07,892 - Scraper-task_1756901855504_140704427884416 - INFO - Processing profile: serinaamadee.eats (5/10)
+2025-09-03 17:20:08,320 - Scraper-task_1756901855504_140704427884416 - INFO - 💾 Saving profile serinaamadee.eats to Airtable...
+2025-09-03 17:20:08,783 - Scraper-task_1756901858764_140704427884416 - INFO - Found 52 video cards for #foodbloggerusa (scroll #17)
+2025-09-03 17:20:08,827 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Profile serinaamadee.eats saved successfully
+2025-09-03 17:20:08,827 - Scraper-task_1756901855504_140704427884416 - INFO - 🎉 Scraping completed!
+2025-09-03 17:20:08,827 - Scraper-task_1756901855504_140704427884416 - INFO - 📊 Summary:
+2025-09-03 17:20:08,827 - Scraper-task_1756901855504_140704427884416 - INFO -    - Total profiles found: 10
+2025-09-03 17:20:08,827 - Scraper-task_1756901855504_140704427884416 - INFO -    - Successfully scraped: 5
+2025-09-03 17:20:08,828 - Scraper-task_1756901855504_140704427884416 - INFO -    - Skipped (already exists): 5
+2025-09-03 17:20:08,828 - Scraper-task_1756901855504_140704427884416 - INFO -    - Errors: 0
+2025-09-03 17:20:08,828 - Scraper-task_1756901855504_140704427884416 - INFO -    - Duration: 153.22 seconds
+2025-09-03 17:20:08,828 - Scraper-task_1756901855504_140704427884416 - INFO -    - Average time per profile: 15.32 seconds
+2025-09-03 17:20:08,828 - Scraper-task_1756901855504_140704427884416 - INFO - 🧹 Cleaning up web driver...
+2025-09-03 17:20:08,892 - Scraper-task_1756901858764_140704427884416 - WARNING - Error processing video element: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,896 - Scraper-task_1756901858764_140704427884416 - WARNING - Error processing video element: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,898 - Scraper-task_1756901858764_140704427884416 - WARNING - Error processing video element: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,900 - Scraper-task_1756901858764_140704427884416 - WARNING - Error processing video element: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,903 - Scraper-task_1756901858764_140704427884416 - WARNING - Error processing video element: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,905 - Scraper-task_1756901858764_140704427884416 - WARNING - Error processing video element: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,907 - Scraper-task_1756901858764_140704427884416 - ERROR - ❌ Critical error in scraping process: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:08,907 - Scraper-task_1756901858764_140704427884416 - INFO - 🧹 Cleaning up web driver...
+2025-09-03 17:20:09,227 - Scraper-task_1756901858764_140704427884416 - INFO - ✅ Web driver cleaned up
+2025-09-03 17:20:09,227 - Scraper-task_1756901858764_140704427884416 - ERROR - [Scraper-task_1756901858764_140704427884416] Error in scraper task task_1756901858764_140704427884416: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+2025-09-03 17:20:09,235 - Scraper-task_1756901858764_140704427884416 - ERROR - [Scraper-task_1756901858764_140704427884416] Traceback: Traceback (most recent call last):
+  File "/Users/macbookpro/Desktop/tural-tiktok-scraper/src/api.py", line 54, in scraper_worker
+    scrape_tiktok_profiles(base_hashtag=hashtag, num_profiles=num_profiles)
+  File "/Users/macbookpro/Desktop/tural-tiktok-scraper/src/tikTok_Scraper.py", line 146, in scrape_tiktok_profiles
+    get_unique_profiles_via_videos(driver, hashtag, num_profiles, all_profiles, country)
+  File "/Users/macbookpro/Desktop/tural-tiktok-scraper/src/tikTok_Scraper.py", line 113, in get_unique_profiles_via_videos
+    driver.execute_script("window.scrollBy(0, 800);")
+  File "/Users/macbookpro/Desktop/tural-tiktok-scraper/.venv/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py", line 555, in execute_script
+    return self.execute(command, {"script": script, "args": converted_args})["value"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/macbookpro/Desktop/tural-tiktok-scraper/.venv/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py", line 458, in execute
+    self.error_handler.check_response(response)
+  File "/Users/macbookpro/Desktop/tural-tiktok-scraper/.venv/lib/python3.12/site-packages/selenium/webdriver/remote/errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.NoSuchWindowException: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=139.0.7258.155)
+Stacktrace:
+0   uc_driver                           0x000000010fe1f668 uc_driver + 5928552
+1   uc_driver                           0x000000010fe16c0a uc_driver + 5893130
+2   uc_driver                           0x000000010f8e0e00 uc_driver + 429568
+3   uc_driver                           0x000000010f8b5870 uc_driver + 252016
+4   uc_driver                           0x000000010f9611f8 uc_driver + 954872
+5   uc_driver                           0x000000010f97fbdc uc_driver + 1080284
+6   uc_driver                           0x000000010f958e33 uc_driver + 921139
+7   uc_driver                           0x000000010f92537b uc_driver + 709499
+8   uc_driver                           0x000000010f926061 uc_driver + 712801
+9   uc_driver                           0x000000010fddd0e0 uc_driver + 5656800
+10  uc_driver                           0x000000010fde0fa4 uc_driver + 5672868
+11  uc_driver                           0x000000010fdb8052 uc_driver + 5505106
+12  uc_driver                           0x000000010fde1a4f uc_driver + 5675599
+13  uc_driver                           0x000000010fda7004 uc_driver + 5435396
+14  uc_driver                           0x000000010fe03d88 uc_driver + 5815688
+15  uc_driver                           0x000000010fe03f50 uc_driver + 5816144
+16  uc_driver                           0x000000010fe167e1 uc_driver + 5892065
+17  libsystem_pthread.dylib             0x00007ff80bd19e59 _pthread_start + 115
+18  libsystem_pthread.dylib             0x00007ff80bd15857 thread_start + 15
+
+
+2025-09-03 17:20:09,236 - Scraper-task_1756901858764_140704427884416 - INFO - Task task_1756901858764_140704427884416 status updated to: failed
+2025-09-03 17:20:09,236 - Scraper-task_1756901858764_140704427884416 - INFO - Active thread removed: task_1756901858764_140704427884416
+2025-09-03 17:20:09,236 - Scraper-task_1756901858764_140704427884416 - INFO - [Scraper-task_1756901858764_140704427884416] Thread cleanup completed for task task_1756901858764_140704427884416
+2025-09-03 17:20:09,408 - Scraper-task_1756901855504_140704427884416 - INFO - ✅ Web driver cleaned up
+2025-09-03 17:20:09,408 - Scraper-task_1756901855504_140704427884416 - INFO - Task task_1756901855504_140704427884416 status updated to: completed
+2025-09-03 17:20:09,408 - Scraper-task_1756901855504_140704427884416 - INFO - [Scraper-task_1756901855504_140704427884416] Successfully completed task task_1756901855504_140704427884416 for hashtag: test
+2025-09-03 17:20:09,409 - Scraper-task_1756901855504_140704427884416 - INFO - Active thread removed: task_1756901855504_140704427884416
+2025-09-03 17:20:09,409 - Scraper-task_1756901855504_140704427884416 - INFO - [Scraper-task_1756901855504_140704427884416] Thread cleanup completed for task task_1756901855504_140704427884416
+2025-09-03 17:54:59,301 - ThreadPoolExecutor-1_0 - WARNING - Run time of job "Health Monitoring (trigger: interval[0:30:00], next run at: 2025-09-03 17:47:03 PKT)" was missed by 0:07:55.768411
+2025-09-03 18:17:29,610 - ThreadPoolExecutor-1_0 - WARNING - Run time of job "Health Monitoring (trigger: interval[0:30:00], next run at: 2025-09-03 18:47:03 PKT)" was missed by 0:00:26.077625
+2025-09-03 19:44:07,732 - MainThread - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-03 19:44:07,732 - MainThread - INFO - Added job "Crown TikTok Scraping" to job store "default"
+2025-09-03 19:44:07,733 - MainThread - INFO - Scheduler started
+2025-09-03 19:44:07,733 - MainThread - INFO - 👑 Crown job scheduler started - will run every 24 hours with 2 concurrent threads
+2025-09-03 19:44:07,733 - MainThread - INFO - Added job "Task Cleanup" to job store "default"
+2025-09-03 19:44:07,733 - MainThread - INFO - 🧹 Cleanup job scheduled - runs every 6 hours
+2025-09-03 19:44:07,733 - MainThread - INFO - Added job "Health Monitoring" to job store "default"
+2025-09-03 19:44:07,733 - MainThread - INFO - 💓 Health monitor scheduled - runs every 30 minutes
+2025-09-03 19:44:07,756 - MainThread - INFO - 🚀 Starting TikTok Scraper Crown Job System...
+2025-09-03 19:44:07,757 - MainThread - INFO - 📁 Using modular architecture:
+2025-09-03 19:44:07,757 - MainThread - INFO -    - api.py: FastAPI endpoints and LLM integration
+2025-09-03 19:44:07,757 - MainThread - INFO -    - task_manager.py: Task management and threading
+2025-09-03 19:44:07,757 - MainThread - INFO -    - main.py: Crown job scheduling with 2 concurrent threads
+2025-09-03 19:44:07,757 - MainThread - INFO -    - tikTok_Scraper.py: Core scraping functionality
+2025-09-03 19:44:07,757 - MainThread - INFO -    - airtable.py: Airtable integration for hashtags and data
+2025-09-03 19:44:55,899 - MainThread - INFO - 🛑 Shutdown signal received, cleaning up...
+2025-09-03 19:44:55,899 - MainThread - INFO - Scheduler has been shut down
+2025-09-03 19:44:55,900 - MainThread - INFO - 📅 Scheduler stopped
+2025-09-03 19:44:55,900 - MainThread - INFO - 👋 Shutdown complete
+2025-09-03 19:50:22,749 - MainThread - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-03 19:50:22,750 - MainThread - INFO - Added job "Crown TikTok Scraping" to job store "default"
+2025-09-03 19:50:22,750 - MainThread - INFO - Scheduler started
+2025-09-03 19:50:22,750 - MainThread - INFO - 👑 Crown job scheduler started - will run every 24 hours with 2 concurrent threads
+2025-09-03 19:50:22,751 - MainThread - INFO - Added job "Task Cleanup" to job store "default"
+2025-09-03 19:50:22,751 - MainThread - INFO - 🧹 Cleanup job scheduled - runs every 6 hours
+2025-09-03 19:50:22,751 - MainThread - INFO - Added job "Health Monitoring" to job store "default"
+2025-09-03 19:50:22,751 - MainThread - INFO - 💓 Health monitor scheduled - runs every 30 minutes
+2025-09-03 19:50:22,751 - MainThread - INFO - 🚀 Starting TikTok Scraper Crown Job System...
+2025-09-03 19:50:22,751 - MainThread - INFO - 📁 Using modular architecture:
+2025-09-03 19:50:22,751 - MainThread - INFO -    - api.py: FastAPI endpoints and LLM integration
+2025-09-03 19:50:22,751 - MainThread - INFO -    - task_manager.py: Task management and threading
+2025-09-03 19:50:22,751 - MainThread - INFO -    - main.py: Crown job scheduling with 2 concurrent threads
+2025-09-03 19:50:22,751 - MainThread - INFO -    - tikTok_Scraper.py: Core scraping functionality
+2025-09-03 19:50:22,752 - MainThread - INFO -    - airtable.py: Airtable integration for hashtags and data
+2025-09-03 19:50:22,752 - MainThread - INFO - 👑 Starting immediate Crown job test run...
+2025-09-03 19:50:22,752 - MainThread - INFO - ⏰ This will test the Crown job functionality before the 24-hour schedule begins
+2025-09-03 19:50:22,752 - MainThread - INFO - 👑 Crown job triggered - starting scheduled scraping with 2 concurrent threads
+2025-09-03 19:50:24,144 - MainThread - INFO - Found 4 active hashtags for crown job
+2025-09-03 19:50:24,145 - MainThread - INFO - Task task_1756911024145_140704427884416 added to manager
+2025-09-03 19:50:24,145 - MainThread - INFO - Crown job: Created task task_1756911024145_140704427884416 for hashtag: crypto
+2025-09-03 19:50:24,145 - MainThread - INFO - Task task_1756911024145_140704427884416 added to manager
+2025-09-03 19:50:24,145 - MainThread - INFO - Crown job: Created task task_1756911024145_140704427884416 for hashtag: cars
+2025-09-03 19:50:24,145 - MainThread - INFO - Task task_1756911024145_140704427884416 added to manager
+2025-09-03 19:50:24,145 - MainThread - INFO - Crown job: Created task task_1756911024145_140704427884416 for hashtag: sports
+2025-09-03 19:50:24,145 - MainThread - INFO - Task task_1756911024145_140704427884416 added to manager
+2025-09-03 19:50:24,146 - MainThread - INFO - Crown job: Created task task_1756911024145_140704427884416 for hashtag: food
+2025-09-03 19:50:24,146 - MainThread - INFO - 👑 Starting crown job batch 1 with 2 threads
+2025-09-03 19:50:24,146 - MainThread - INFO - Active thread added: task_1756911024145_140704427884416 (Crown-task_1756911024145_140704427884416)
+2025-09-03 19:50:24,146 - Crown-task_1756911024145_140704427884416 - INFO - [Crown-task_1756911024145_140704427884416] Starting crown job worker for hashtag: crypto
+2025-09-03 19:50:24,146 - MainThread - INFO - 👑 Started crown job thread for task task_1756911024145_140704427884416 (hashtag: crypto)
+2025-09-03 19:50:24,146 - Crown-task_1756911024145_140704427884416 - INFO - Task task_1756911024145_140704427884416 status updated to: running
+2025-09-03 19:50:24,147 - MainThread - INFO - Active thread added: task_1756911024145_140704427884416 (Crown-task_1756911024145_140704427884416)
+2025-09-03 19:50:24,147 - Crown-task_1756911024145_140704427884416 - INFO - [Crown-task_1756911024145_140704427884416] Executing crown job scraper for hashtag: crypto
+2025-09-03 19:50:24,147 - Crown-task_1756911024145_140704427884416 - INFO - [Crown-task_1756911024145_140704427884416] Starting crown job worker for hashtag: cars
+2025-09-03 19:50:24,147 - Crown-task_1756911024145_140704427884416 - INFO - 🚀 Starting TikTok profile scraping for hashtag: crypto
+2025-09-03 19:50:24,147 - MainThread - INFO - 👑 Started crown job thread for task task_1756911024145_140704427884416 (hashtag: cars)
+2025-09-03 19:50:24,147 - Crown-task_1756911024145_140704427884416 - INFO - Task task_1756911024145_140704427884416 status updated to: running
+2025-09-03 19:50:24,148 - Crown-task_1756911024145_140704427884416 - INFO - Target profiles: 500
+2025-09-03 19:50:24,148 - Crown-task_1756911024145_140704427884416 - INFO - [Crown-task_1756911024145_140704427884416] Executing crown job scraper for hashtag: cars
+2025-09-03 19:50:24,148 - Crown-task_1756911024145_140704427884416 - INFO - 🚗 Initializing web driver...
+2025-09-03 19:50:24,148 - Crown-task_1756911024145_140704427884416 - INFO - 🚀 Starting TikTok profile scraping for hashtag: cars
+2025-09-03 19:50:24,150 - Crown-task_1756911024145_140704427884416 - INFO - Target profiles: 500
+2025-09-03 19:50:24,151 - Crown-task_1756911024145_140704427884416 - INFO - 🚗 Initializing web driver...
+2025-09-03 19:50:28,062 - Crown-task_1756911024145_140704427884416 - INFO - ✅ Web driver initialized successfully
+2025-09-03 19:50:28,063 - Crown-task_1756911024145_140704427884416 - INFO - 🌍 Generating country hashtag variations for: cars
+2025-09-03 19:50:28,063 - Crown-task_1756911024145_140704427884416 - INFO - Generated 80 hashtag variations
+2025-09-03 19:50:28,063 - Crown-task_1756911024145_140704427884416 - INFO - 📥 Phase 1: Collecting profile URLs...
+2025-09-03 19:50:28,063 - Crown-task_1756911024145_140704427884416 - INFO - 🎬 Collecting profiles for #carsusa (Country: usa)
+2025-09-03 19:50:28,072 - Crown-task_1756911024145_140704427884416 - INFO - ✅ Web driver initialized successfully
+2025-09-03 19:50:28,072 - Crown-task_1756911024145_140704427884416 - INFO - 🌍 Generating country hashtag variations for: crypto
+2025-09-03 19:50:28,072 - Crown-task_1756911024145_140704427884416 - INFO - Generated 80 hashtag variations
+2025-09-03 19:50:28,072 - Crown-task_1756911024145_140704427884416 - INFO - 📥 Phase 1: Collecting profile URLs...
+2025-09-03 19:50:28,072 - Crown-task_1756911024145_140704427884416 - INFO - 🎬 Collecting profiles for #cryptousa (Country: usa)
+2025-09-03 19:51:03,132 - Crown-task_1756911024145_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/carsusa
+2025-09-03 19:51:04,401 - Crown-task_1756911024145_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptousa
+2025-09-03 19:51:09,712 - Crown-task_1756911024145_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:51:09,735 - Crown-task_1756911024145_140704427884416 - INFO - Found 56 video cards for #carsusa (scroll #1)
+2025-09-03 19:51:12,354 - Crown-task_1756911024145_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:51:12,696 - Crown-task_1756911024145_140704427884416 - INFO - Found 112 video cards for #cryptousa (scroll #1)
+2025-09-03 19:51:12,818 - Crown-task_1756911024145_140704427884416 - INFO - Found 112 video cards for #carsusa (scroll #2)
+2025-09-03 19:51:16,316 - Crown-task_1756911024145_140704427884416 - INFO - Found 168 video cards for #cryptousa (scroll #2)
+2025-09-03 19:51:16,877 - Crown-task_1756911024145_140704427884416 - INFO - Found 168 video cards for #carsusa (scroll #3)
+2025-09-03 19:51:19,523 - Crown-task_1756911024145_140704427884416 - INFO - Found 226 video cards for #cryptousa (scroll #3)
+2025-09-03 19:51:19,879 - Crown-task_1756911024145_140704427884416 - INFO - Found 226 video cards for #carsusa (scroll #4)
+2025-09-03 19:51:20,933 - MainThread - INFO - 🛑 Shutdown signal received, cleaning up...
+2025-09-03 19:51:20,934 - MainThread - INFO - Scheduler has been shut down
+2025-09-03 19:51:20,934 - MainThread - INFO - 📅 Scheduler stopped
+2025-09-03 19:51:20,934 - MainThread - INFO - ⏳ Waiting for 1 active tasks to complete...
+2025-09-03 19:51:39,950 - MainThread - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-03 19:51:39,950 - MainThread - INFO - Added job "Crown TikTok Scraping" to job store "default"
+2025-09-03 19:51:39,951 - MainThread - INFO - Scheduler started
+2025-09-03 19:51:39,951 - MainThread - INFO - 👑 Crown job scheduler started - will run every 24 hours with 2 concurrent threads
+2025-09-03 19:51:39,951 - MainThread - INFO - Added job "Task Cleanup" to job store "default"
+2025-09-03 19:51:39,951 - MainThread - INFO - 🧹 Cleanup job scheduled - runs every 6 hours
+2025-09-03 19:51:39,951 - MainThread - INFO - Added job "Health Monitoring" to job store "default"
+2025-09-03 19:51:39,951 - MainThread - INFO - 💓 Health monitor scheduled - runs every 30 minutes
+2025-09-03 19:51:39,952 - MainThread - INFO - 🚀 Starting TikTok Scraper Crown Job System...
+2025-09-03 19:51:39,952 - MainThread - INFO - 📁 Using modular architecture:
+2025-09-03 19:51:39,952 - MainThread - INFO -    - api.py: FastAPI endpoints and LLM integration
+2025-09-03 19:51:39,952 - MainThread - INFO -    - task_manager.py: Task management and threading
+2025-09-03 19:51:39,952 - MainThread - INFO -    - main.py: Crown job scheduling with 2 concurrent threads
+2025-09-03 19:51:39,952 - MainThread - INFO -    - tikTok_Scraper.py: Core scraping functionality
+2025-09-03 19:51:39,952 - MainThread - INFO -    - airtable.py: Airtable integration for hashtags and data
+2025-09-03 19:51:39,952 - MainThread - INFO - 👑 Starting immediate Crown job test run...
+2025-09-03 19:51:39,952 - MainThread - INFO - ⏰ This will test the Crown job functionality before the 24-hour schedule begins
+2025-09-03 19:51:39,952 - MainThread - INFO - 👑 Crown job triggered - starting scheduled scraping with 2 concurrent threads
+2025-09-03 19:51:41,040 - MainThread - INFO - Found 4 active hashtags for crown job
+2025-09-03 19:51:41,040 - MainThread - INFO - Task task_1756911101040_140704427884416 added to manager
+2025-09-03 19:51:41,041 - MainThread - INFO - Crown job: Created task task_1756911101040_140704427884416 for hashtag: crypto
+2025-09-03 19:51:41,041 - MainThread - INFO - Task task_1756911101041_140704427884416 added to manager
+2025-09-03 19:51:41,041 - MainThread - INFO - Crown job: Created task task_1756911101041_140704427884416 for hashtag: cars
+2025-09-03 19:51:41,041 - MainThread - INFO - Task task_1756911101041_140704427884416 added to manager
+2025-09-03 19:51:41,041 - MainThread - INFO - Crown job: Created task task_1756911101041_140704427884416 for hashtag: sports
+2025-09-03 19:51:41,041 - MainThread - INFO - Task task_1756911101041_140704427884416 added to manager
+2025-09-03 19:51:41,041 - MainThread - INFO - Crown job: Created task task_1756911101041_140704427884416 for hashtag: food
+2025-09-03 19:51:41,041 - MainThread - INFO - 👑 Starting crown job batch 1 with 1 threads
+2025-09-03 19:51:41,042 - MainThread - INFO - Active thread added: task_1756911101040_140704427884416 (Crown-task_1756911101040_140704427884416)
+2025-09-03 19:51:41,042 - Crown-task_1756911101040_140704427884416 - INFO - [Crown-task_1756911101040_140704427884416] Starting crown job worker for hashtag: crypto
+2025-09-03 19:51:41,042 - MainThread - INFO - 👑 Started crown job thread for task task_1756911101040_140704427884416 (hashtag: crypto)
+2025-09-03 19:51:41,042 - Crown-task_1756911101040_140704427884416 - INFO - Task task_1756911101040_140704427884416 status updated to: running
+2025-09-03 19:51:41,042 - Crown-task_1756911101040_140704427884416 - INFO - [Crown-task_1756911101040_140704427884416] Executing crown job scraper for hashtag: crypto
+2025-09-03 19:51:41,042 - Crown-task_1756911101040_140704427884416 - INFO - 🚀 Starting TikTok profile scraping for hashtag: crypto
+2025-09-03 19:51:41,043 - Crown-task_1756911101040_140704427884416 - INFO - Target profiles: 500
+2025-09-03 19:51:41,043 - Crown-task_1756911101040_140704427884416 - INFO - 🚗 Initializing web driver...
+2025-09-03 19:51:43,303 - Crown-task_1756911101040_140704427884416 - INFO - ✅ Web driver initialized successfully
+2025-09-03 19:51:43,303 - Crown-task_1756911101040_140704427884416 - INFO - 🌍 Generating country hashtag variations for: crypto
+2025-09-03 19:51:43,303 - Crown-task_1756911101040_140704427884416 - INFO - Generated 80 hashtag variations
+2025-09-03 19:51:43,304 - Crown-task_1756911101040_140704427884416 - INFO - 📥 Phase 1: Collecting profile URLs...
+2025-09-03 19:51:43,304 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #cryptousa (Country: usa)
+2025-09-03 19:52:28,214 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptousa
+2025-09-03 19:52:36,525 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:52:36,541 - Crown-task_1756911101040_140704427884416 - INFO - Found 58 video cards for #cryptousa (scroll #1)
+2025-09-03 19:52:38,928 - Crown-task_1756911101040_140704427884416 - INFO - Found 58 video cards for #cryptousa (scroll #2)
+2025-09-03 19:52:41,519 - Crown-task_1756911101040_140704427884416 - INFO - Found 112 video cards for #cryptousa (scroll #3)
+2025-09-03 19:52:45,124 - Crown-task_1756911101040_140704427884416 - INFO - Found 170 video cards for #cryptousa (scroll #4)
+2025-09-03 19:52:48,716 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #cryptousa after 4 scrolls
+2025-09-03 19:52:48,716 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #cryptousa: 70 profiles found
+2025-09-03 19:52:48,716 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto_usa (Country: usa)
+2025-09-03 19:52:53,308 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto_usa
+2025-09-03 19:53:01,887 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:53:01,896 - Crown-task_1756911101040_140704427884416 - INFO - Found 52 video cards for #crypto_usa (scroll #1)
+2025-09-03 19:53:05,017 - Crown-task_1756911101040_140704427884416 - INFO - Found 52 video cards for #crypto_usa (scroll #2)
+2025-09-03 19:53:07,849 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #crypto_usa (scroll #3)
+2025-09-03 19:53:10,317 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto_usa after 3 scrolls
+2025-09-03 19:53:10,318 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto_usa: 84 profiles found
+2025-09-03 19:53:10,318 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-in-usa (Country: usa)
+2025-09-03 19:53:12,813 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-in-usa
+2025-09-03 19:53:20,515 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:53:20,527 - Crown-task_1756911101040_140704427884416 - INFO - Found 52 video cards for #crypto-in-usa (scroll #1)
+2025-09-03 19:53:23,500 - Crown-task_1756911101040_140704427884416 - INFO - Found 52 video cards for #crypto-in-usa (scroll #2)
+2025-09-03 19:53:26,019 - Crown-task_1756911101040_140704427884416 - INFO - Found 106 video cards for #crypto-in-usa (scroll #3)
+2025-09-03 19:53:28,827 - Crown-task_1756911101040_140704427884416 - INFO - Found 160 video cards for #crypto-in-usa (scroll #4)
+2025-09-03 19:53:32,889 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-in-usa after 4 scrolls
+2025-09-03 19:53:32,889 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-in-usa: 122 profiles found
+2025-09-03 19:53:32,889 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-usa (Country: usa)
+2025-09-03 19:53:35,245 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-usa
+2025-09-03 19:53:42,821 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:53:42,885 - Crown-task_1756911101040_140704427884416 - INFO - Found 58 video cards for #crypto-usa (scroll #1)
+2025-09-03 19:53:46,194 - Crown-task_1756911101040_140704427884416 - INFO - Found 112 video cards for #crypto-usa (scroll #2)
+2025-09-03 19:53:49,956 - Crown-task_1756911101040_140704427884416 - INFO - Found 168 video cards for #crypto-usa (scroll #3)
+2025-09-03 19:53:53,793 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-usa after 3 scrolls
+2025-09-03 19:53:53,794 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-usa: 133 profiles found
+2025-09-03 19:53:53,794 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #cryptouk (Country: uk)
+2025-09-03 19:53:56,286 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptouk
+2025-09-03 19:54:03,308 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:54:03,318 - Crown-task_1756911101040_140704427884416 - INFO - Found 52 video cards for #cryptouk (scroll #1)
+2025-09-03 19:54:06,645 - Crown-task_1756911101040_140704427884416 - INFO - Found 112 video cards for #cryptouk (scroll #2)
+2025-09-03 19:54:10,125 - Crown-task_1756911101040_140704427884416 - INFO - Found 170 video cards for #cryptouk (scroll #3)
+2025-09-03 19:54:13,429 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #cryptouk after 3 scrolls
+2025-09-03 19:54:13,429 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #cryptouk: 187 profiles found
+2025-09-03 19:54:13,429 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto_uk (Country: uk)
+2025-09-03 19:54:16,164 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto_uk
+2025-09-03 19:54:23,353 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:54:33,374 - Crown-task_1756911101040_140704427884416 - INFO - Found 0 video cards for #crypto_uk (scroll #1)
+2025-09-03 19:54:36,315 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto_uk after 1 scrolls
+2025-09-03 19:54:36,315 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto_uk: 187 profiles found
+2025-09-03 19:54:36,316 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-in-uk (Country: uk)
+2025-09-03 19:54:39,087 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-in-uk
+2025-09-03 19:54:46,489 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:54:46,501 - Crown-task_1756911101040_140704427884416 - INFO - Found 58 video cards for #crypto-in-uk (scroll #1)
+2025-09-03 19:54:50,241 - Crown-task_1756911101040_140704427884416 - INFO - Found 114 video cards for #crypto-in-uk (scroll #2)
+2025-09-03 19:54:53,572 - Crown-task_1756911101040_140704427884416 - INFO - Found 160 video cards for #crypto-in-uk (scroll #3)
+2025-09-03 19:54:57,774 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-in-uk after 3 scrolls
+2025-09-03 19:54:57,774 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-in-uk: 221 profiles found
+2025-09-03 19:54:57,774 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-uk (Country: uk)
+2025-09-03 19:55:00,595 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-uk
+2025-09-03 19:55:08,920 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:55:08,931 - Crown-task_1756911101040_140704427884416 - INFO - Found 54 video cards for #crypto-uk (scroll #1)
+2025-09-03 19:55:11,281 - Crown-task_1756911101040_140704427884416 - INFO - Found 54 video cards for #crypto-uk (scroll #2)
+2025-09-03 19:55:13,813 - Crown-task_1756911101040_140704427884416 - INFO - Found 112 video cards for #crypto-uk (scroll #3)
+2025-09-03 19:55:16,537 - Crown-task_1756911101040_140704427884416 - INFO - Found 112 video cards for #crypto-uk (scroll #4)
+2025-09-03 19:55:19,630 - Crown-task_1756911101040_140704427884416 - INFO - Found 168 video cards for #crypto-uk (scroll #5)
+2025-09-03 19:55:23,816 - Crown-task_1756911101040_140704427884416 - INFO - Found 222 video cards for #crypto-uk (scroll #6)
+2025-09-03 19:55:27,731 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-uk after 6 scrolls
+2025-09-03 19:55:27,732 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-uk: 244 profiles found
+2025-09-03 19:55:27,733 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #cryptocanada (Country: canada)
+2025-09-03 19:55:30,639 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptocanada
+2025-09-03 19:55:38,207 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:55:38,230 - Crown-task_1756911101040_140704427884416 - INFO - Found 61 video cards for #cryptocanada (scroll #1)
+2025-09-03 19:55:41,197 - Crown-task_1756911101040_140704427884416 - INFO - Found 61 video cards for #cryptocanada (scroll #2)
+2025-09-03 19:55:43,679 - Crown-task_1756911101040_140704427884416 - INFO - Found 119 video cards for #cryptocanada (scroll #3)
+2025-09-03 19:55:46,401 - Crown-task_1756911101040_140704427884416 - INFO - Found 119 video cards for #cryptocanada (scroll #4)
+2025-09-03 19:55:48,821 - Crown-task_1756911101040_140704427884416 - INFO - Found 173 video cards for #cryptocanada (scroll #5)
+2025-09-03 19:55:52,250 - Crown-task_1756911101040_140704427884416 - INFO - Found 219 video cards for #cryptocanada (scroll #6)
+2025-09-03 19:55:56,053 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #cryptocanada after 6 scrolls
+2025-09-03 19:55:56,053 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #cryptocanada: 300 profiles found
+2025-09-03 19:55:56,053 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto_canada (Country: canada)
+2025-09-03 19:55:59,001 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto_canada
+2025-09-03 19:56:06,196 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:56:06,212 - Crown-task_1756911101040_140704427884416 - INFO - Found 61 video cards for #crypto_canada (scroll #1)
+2025-09-03 19:56:10,712 - Crown-task_1756911101040_140704427884416 - INFO - Found 117 video cards for #crypto_canada (scroll #2)
+2025-09-03 19:56:13,470 - Crown-task_1756911101040_140704427884416 - INFO - Found 117 video cards for #crypto_canada (scroll #3)
+2025-09-03 19:56:16,697 - Crown-task_1756911101040_140704427884416 - INFO - Found 163 video cards for #crypto_canada (scroll #4)
+2025-09-03 19:56:18,972 - Crown-task_1756911101040_140704427884416 - INFO - Found 163 video cards for #crypto_canada (scroll #5)
+2025-09-03 19:56:21,752 - Crown-task_1756911101040_140704427884416 - INFO - Found 221 video cards for #crypto_canada (scroll #6)
+2025-09-03 19:56:24,951 - Crown-task_1756911101040_140704427884416 - INFO - Found 237 video cards for #crypto_canada (scroll #7)
+2025-09-03 19:56:27,234 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto_canada after 7 scrolls
+2025-09-03 19:56:27,234 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto_canada: 329 profiles found
+2025-09-03 19:56:27,234 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-in-canada (Country: canada)
+2025-09-03 19:56:29,772 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-in-canada
+2025-09-03 19:56:36,675 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:56:36,687 - Crown-task_1756911101040_140704427884416 - INFO - Found 56 video cards for #crypto-in-canada (scroll #1)
+2025-09-03 19:56:39,732 - Crown-task_1756911101040_140704427884416 - INFO - Found 116 video cards for #crypto-in-canada (scroll #2)
+2025-09-03 19:56:42,457 - Crown-task_1756911101040_140704427884416 - INFO - Found 162 video cards for #crypto-in-canada (scroll #3)
+2025-09-03 19:56:45,820 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-in-canada after 3 scrolls
+2025-09-03 19:56:45,821 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-in-canada: 344 profiles found
+2025-09-03 19:56:45,821 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-canada (Country: canada)
+2025-09-03 19:56:48,333 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-canada
+2025-09-03 19:56:56,385 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:56:56,395 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #crypto-canada (scroll #1)
+2025-09-03 19:56:58,750 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #crypto-canada (scroll #2)
+2025-09-03 19:57:01,193 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-canada after 2 scrolls
+2025-09-03 19:57:01,193 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-canada: 349 profiles found
+2025-09-03 19:57:01,193 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #cryptoaustralia (Country: australia)
+2025-09-03 19:57:05,171 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptoaustralia
+2025-09-03 19:57:13,649 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:57:13,661 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #cryptoaustralia (scroll #1)
+2025-09-03 19:57:17,826 - Crown-task_1756911101040_140704427884416 - INFO - Found 120 video cards for #cryptoaustralia (scroll #2)
+2025-09-03 19:57:22,111 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #cryptoaustralia after 2 scrolls
+2025-09-03 19:57:22,111 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #cryptoaustralia: 383 profiles found
+2025-09-03 19:57:22,111 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto_australia (Country: australia)
+2025-09-03 19:57:25,014 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto_australia
+2025-09-03 19:57:32,850 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:57:32,862 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #crypto_australia (scroll #1)
+2025-09-03 19:57:37,237 - Crown-task_1756911101040_140704427884416 - INFO - Found 120 video cards for #crypto_australia (scroll #2)
+2025-09-03 19:57:40,740 - Crown-task_1756911101040_140704427884416 - INFO - Found 174 video cards for #crypto_australia (scroll #3)
+2025-09-03 19:57:44,433 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto_australia after 3 scrolls
+2025-09-03 19:57:44,433 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto_australia: 395 profiles found
+2025-09-03 19:57:44,433 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-in-australia (Country: australia)
+2025-09-03 19:57:47,846 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-in-australia
+2025-09-03 19:57:54,812 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:57:54,962 - Crown-task_1756911101040_140704427884416 - INFO - Found 58 video cards for #crypto-in-australia (scroll #1)
+2025-09-03 19:57:58,214 - Crown-task_1756911101040_140704427884416 - INFO - Found 116 video cards for #crypto-in-australia (scroll #2)
+2025-09-03 19:58:01,108 - Crown-task_1756911101040_140704427884416 - INFO - Found 172 video cards for #crypto-in-australia (scroll #3)
+2025-09-03 19:58:04,519 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-in-australia after 3 scrolls
+2025-09-03 19:58:04,519 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-in-australia: 413 profiles found
+2025-09-03 19:58:04,519 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto-australia (Country: australia)
+2025-09-03 19:58:07,171 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto-australia
+2025-09-03 19:58:15,306 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:58:15,323 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #crypto-australia (scroll #1)
+2025-09-03 19:58:19,098 - Crown-task_1756911101040_140704427884416 - INFO - Found 118 video cards for #crypto-australia (scroll #2)
+2025-09-03 19:58:22,792 - Crown-task_1756911101040_140704427884416 - INFO - Found 174 video cards for #crypto-australia (scroll #3)
+2025-09-03 19:58:25,283 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #crypto-australia after 3 scrolls
+2025-09-03 19:58:25,283 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #crypto-australia: 416 profiles found
+2025-09-03 19:58:25,284 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #cryptogermany (Country: germany)
+2025-09-03 19:58:28,430 - Crown-task_1756911101040_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptogermany
+2025-09-03 19:58:36,720 - Crown-task_1756911101040_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 19:58:36,736 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #cryptogermany (scroll #1)
+2025-09-03 19:58:39,211 - Crown-task_1756911101040_140704427884416 - INFO - Found 60 video cards for #cryptogermany (scroll #2)
+2025-09-03 19:58:42,122 - Crown-task_1756911101040_140704427884416 - INFO - 🛑 No more scrolling possible for #cryptogermany after 2 scrolls
+2025-09-03 19:58:42,123 - Crown-task_1756911101040_140704427884416 - INFO - 📊 Profile collection completed for #cryptogermany: 438 profiles found
+2025-09-03 19:58:42,123 - Crown-task_1756911101040_140704427884416 - INFO - 🎬 Collecting profiles for #crypto_germany (Country: germany)
+2025-09-03 19:58:47,691 - Crown-task_1756911101040_140704427884416 - ERROR - ❌ Critical error in scraping process: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2025-09-03 19:58:47,691 - Crown-task_1756911101040_140704427884416 - INFO - 🧹 Cleaning up web driver...
+2025-09-03 19:58:47,902 - MainThread - INFO - 🛑 Shutdown signal received, cleaning up...
+2025-09-03 19:58:47,902 - MainThread - INFO - Scheduler has been shut down
+2025-09-03 19:58:47,903 - MainThread - INFO - 📅 Scheduler stopped
+2025-09-03 19:58:47,903 - MainThread - INFO - ⏳ Waiting for 1 active tasks to complete...
+2025-09-03 20:00:02,544 - MainThread - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-03 20:00:02,544 - MainThread - INFO - Added job "Crown TikTok Scraping" to job store "default"
+2025-09-03 20:00:02,544 - MainThread - INFO - Scheduler started
+2025-09-03 20:00:02,544 - MainThread - INFO - 👑 Crown job scheduler started - will run every 24 hours with 2 concurrent threads
+2025-09-03 20:00:02,545 - MainThread - INFO - Added job "Task Cleanup" to job store "default"
+2025-09-03 20:00:02,545 - MainThread - INFO - 🧹 Cleanup job scheduled - runs every 6 hours
+2025-09-03 20:00:02,545 - MainThread - INFO - Added job "Health Monitoring" to job store "default"
+2025-09-03 20:00:02,545 - MainThread - INFO - 💓 Health monitor scheduled - runs every 30 minutes
+2025-09-03 20:00:02,545 - MainThread - INFO - 🚀 Starting TikTok Scraper Crown Job System...
+2025-09-03 20:00:02,545 - MainThread - INFO - 📁 Using modular architecture:
+2025-09-03 20:00:02,545 - MainThread - INFO -    - api.py: FastAPI endpoints and LLM integration
+2025-09-03 20:00:02,545 - MainThread - INFO -    - task_manager.py: Task management and threading
+2025-09-03 20:00:02,546 - MainThread - INFO -    - main.py: Crown job scheduling with 2 concurrent threads
+2025-09-03 20:00:02,546 - MainThread - INFO -    - tikTok_Scraper.py: Core scraping functionality
+2025-09-03 20:00:02,546 - MainThread - INFO -    - airtable.py: Airtable integration for hashtags and data
+2025-09-03 20:00:02,546 - MainThread - INFO - 👑 Starting immediate Crown job test run...
+2025-09-03 20:00:02,546 - MainThread - INFO - ⏰ This will test the Crown job functionality before the 24-hour schedule begins
+2025-09-03 20:00:02,546 - MainThread - INFO - 👑 Crown job triggered - starting scheduled scraping with 2 concurrent threads
+2025-09-03 20:00:03,681 - MainThread - INFO - Found 4 active hashtags for crown job
+2025-09-03 20:00:03,681 - MainThread - INFO - Task task_1756911603681_140704427884416 added to manager
+2025-09-03 20:00:03,682 - MainThread - INFO - Crown job: Created task task_1756911603681_140704427884416 for hashtag: crypto
+2025-09-03 20:00:03,682 - MainThread - INFO - Task task_1756911603682_140704427884416 added to manager
+2025-09-03 20:00:03,682 - MainThread - INFO - Crown job: Created task task_1756911603682_140704427884416 for hashtag: cars
+2025-09-03 20:00:03,682 - MainThread - INFO - Task task_1756911603682_140704427884416 added to manager
+2025-09-03 20:00:03,682 - MainThread - INFO - Crown job: Created task task_1756911603682_140704427884416 for hashtag: sports
+2025-09-03 20:00:03,682 - MainThread - INFO - Task task_1756911603682_140704427884416 added to manager
+2025-09-03 20:00:03,682 - MainThread - INFO - Crown job: Created task task_1756911603682_140704427884416 for hashtag: food
+2025-09-03 20:00:03,682 - MainThread - INFO - 👑 Starting crown job batch 1 with 1 threads
+2025-09-03 20:00:03,683 - MainThread - INFO - Active thread added: task_1756911603681_140704427884416 (Crown-task_1756911603681_140704427884416)
+2025-09-03 20:00:03,683 - Crown-task_1756911603681_140704427884416 - INFO - [Crown-task_1756911603681_140704427884416] Starting crown job worker for hashtag: crypto
+2025-09-03 20:00:03,683 - MainThread - INFO - 👑 Started crown job thread for task task_1756911603681_140704427884416 (hashtag: crypto)
+2025-09-03 20:00:03,683 - Crown-task_1756911603681_140704427884416 - INFO - Task task_1756911603681_140704427884416 status updated to: running
+2025-09-03 20:00:03,683 - Crown-task_1756911603681_140704427884416 - INFO - [Crown-task_1756911603681_140704427884416] Executing crown job scraper for hashtag: crypto
+2025-09-03 20:00:03,683 - Crown-task_1756911603681_140704427884416 - INFO - 🚀 Starting TikTok profile scraping for hashtag: crypto
+2025-09-03 20:00:03,684 - Crown-task_1756911603681_140704427884416 - INFO - Target profiles: 500
+2025-09-03 20:00:05,417 - Crown-task_1756911603681_140704427884416 - INFO - Found 302 existing usernames in database
+2025-09-03 20:00:05,417 - Crown-task_1756911603681_140704427884416 - INFO - 🚗 Initializing web driver...
+2025-09-03 20:00:10,337 - Crown-task_1756911603681_140704427884416 - INFO - ✅ Web driver initialized successfully
+2025-09-03 20:00:10,337 - Crown-task_1756911603681_140704427884416 - INFO - 🌍 Generating country hashtag variations for: crypto
+2025-09-03 20:00:10,338 - Crown-task_1756911603681_140704427884416 - INFO - Generated 80 hashtag variations
+2025-09-03 20:00:10,338 - Crown-task_1756911603681_140704427884416 - INFO - 📥 Phase 1: Collecting profile URLs...
+2025-09-03 20:00:10,338 - Crown-task_1756911603681_140704427884416 - INFO - 🎬 Collecting profiles for #cryptousa (Country: usa)
+2025-09-03 20:00:53,054 - Crown-task_1756911603681_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/cryptousa
+2025-09-03 20:00:59,370 - Crown-task_1756911603681_140704427884416 - INFO - Found 118 video cards for #cryptousa (scroll #1)
+2025-09-03 20:01:03,045 - Crown-task_1756911603681_140704427884416 - INFO - 🛑 No more scrolling possible for #cryptousa after 1 scrolls
+2025-09-03 20:01:03,045 - Crown-task_1756911603681_140704427884416 - INFO - 📊 Profile collection completed for #cryptousa: 50 profiles found
+2025-09-03 20:01:03,045 - Crown-task_1756911603681_140704427884416 - INFO - 🎬 Collecting profiles for #crypto_usa (Country: usa)
+2025-09-03 20:01:04,651 - Crown-task_1756911603681_140704427884416 - INFO - Navigated to hashtag page: https://www.tiktok.com/tag/crypto_usa
+2025-09-03 20:01:10,378 - Crown-task_1756911603681_140704427884416 - INFO - Found 58 video cards for #crypto_usa (scroll #1)
+2025-09-03 20:01:14,518 - Crown-task_1756911603681_140704427884416 - INFO - Found 116 video cards for #crypto_usa (scroll #2)
+2025-09-03 20:01:17,588 - Crown-task_1756911603681_140704427884416 - INFO - Found 176 video cards for #crypto_usa (scroll #3)
+2025-09-03 20:01:19,559 - MainThread - INFO - ⚠️ Keyboard interrupt received
+2025-09-03 20:01:19,560 - MainThread - INFO - 🛑 Shutdown signal received, cleaning up...
+2025-09-03 20:01:19,560 - MainThread - INFO - Scheduler has been shut down
+2025-09-03 20:01:19,560 - MainThread - INFO - 📅 Scheduler stopped
+2025-09-03 20:01:19,560 - MainThread - INFO - ⏳ Waiting for 1 active tasks to complete...
+2025-09-03 20:01:19,819 - MainThread - INFO - 🛑 Shutdown signal received, cleaning up...

@@ -72,7 +72,7 @@ def generate_country_hashtags(base_hashtag):
     logger.info(f"Generated {len(hashtag_variations)} hashtag variations")
     return hashtag_variations
 
-def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, country):
+def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, country, existing_usernames):
     """Collect unique profile URLs by browsing hashtag videos"""
     logger.info(f"🎬 Collecting profiles for #{hashtag} (Country: {country})")
     
@@ -99,6 +99,12 @@ def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, 
                 if not video_link:
                     continue
                 profile_url = video_link.split("/video/")[0]
+                username = profile_url.split("/")[-1] if profile_url else ""    
+                # Skip if username already exists
+                if username in existing_usernames:
+                    logger.debug(f"Skipping existing username: {username}")
+                    continue
+
                 if profile_url in [p["profile_link"] for p in profile_urls]:
                     continue
                 profile_urls.append({"profile_link": profile_url, "country": country})
@@ -127,11 +133,11 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
     start_time = time.time()
     logger.info(f"🚀 Starting TikTok profile scraping for hashtag: {base_hashtag}")
     logger.info(f"Target profiles: {num_profiles}")
+    existing_usernames = set(get_existing_usernames())
+    logger.info(f"Found {len(existing_usernames)} existing usernames in database")
     
     driver = None
     all_profiles = []
-    existing_usernames = set(get_existing_usernames())
-    logger.info(f"Found {len(existing_usernames)} existing usernames in database")
 
     try:
         driver = get_driver()
@@ -143,7 +149,7 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
             if len(all_profiles) >= num_profiles:
                 logger.info(f"Reached target profile count, stopping collection")
                 break
-            get_unique_profiles_via_videos(driver, hashtag, num_profiles, all_profiles, country)
+            get_unique_profiles_via_videos(driver, hashtag, num_profiles, all_profiles, country, existing_usernames)
 
         logger.info(f"✅ Phase 1 completed: {len(all_profiles)} profiles collected")
 
@@ -165,11 +171,6 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
                 username = extract_username_from_url(url)
                 if not username:
                     logger.warning(f"Skipping profile - could not extract username: {url}")
-                    skipped_count += 1
-                    continue
-                
-                if username in existing_usernames:
-                    logger.info(f"⏭️ Skipping {username} - already in database")
                     skipped_count += 1
                     continue
                 

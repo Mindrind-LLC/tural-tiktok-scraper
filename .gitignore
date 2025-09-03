@@ -1,4 +1,7 @@
 /.env
 /.venv
-/__pycache__
+*/__pycache__
 cli_logs.log
+/__pycache__
+*.pem
+server_command.txt

@@ -10,7 +10,7 @@ from src.schemas import (
     ActiveHashtagsResponse, HealthResponse, LLMQueryResponse, AIQueryRequest,
     ProfileFilters
 )
-from src.airtable import get_active_hashtags, table
+from src.airtable import get_active_hashtags, data_table
 from src.task_manager import task_manager, generate_task_id, create_task_info
 from src.llm_query import parse_query_to_filters
 from src.tikTok_Scraper import scrape_tiktok_profiles
@@ -376,7 +376,7 @@ async def get_profiles(
 
         formula = "AND(" + ", ".join(formula_parts) + ")" if formula_parts else None
 
-        records = table.all(max_records=limit, formula=formula)
+        records = data_table.all(max_records=limit, formula=formula)
 
         logger.info(f"Retrieved {len(records)} profiles with filters: hashtag={hashtag}, country={country}, min_followers={min_followers}, min_likes={min_likes}")
 
@@ -423,7 +423,7 @@ async def search_profiles_ai(request: AIQueryRequest):
         formula = "AND(" + ", ".join(formula_parts) + ")" if formula_parts else None
 
         # Step 3: Fetch from Airtable
-        records = table.all(max_records=filters.limit, formula=formula)
+        records = data_table.all(max_records=filters.limit, formula=formula)
 
         logger.info(f"AI search returned {len(records)} profiles for query: {request.query}")
 
@@ -447,7 +447,7 @@ async def get_profile_statistics():
     """
     try:
         # Get all profiles for analysis
-        all_records = table.all()
+        all_records = data_table.all()
         
         if not all_records:
             return {
@@ -526,7 +526,7 @@ async def search_profiles_advanced(
         # Build search formula for text search
         search_formula = f"OR(SEARCH('{q.lower()}', LOWER({{Username}})), SEARCH('{q.lower()}', LOWER({{Bio}})), SEARCH('{q.lower()}', LOWER({{Hashtag}})))"
         
-        records = table.all(max_records=limit, formula=search_formula)
+        records = data_table.all(max_records=limit, formula=search_formula)
         
         logger.info(f"Advanced search for '{q}' returned {len(records)} profiles")
         
