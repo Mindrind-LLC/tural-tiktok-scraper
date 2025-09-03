@@ -24,30 +24,18 @@ def get_driver():
     
     # 🔹 Add Proxy Here
     proxy = os.getenv("PROXY")  # Example: "http://username:password@proxyserver:port"
-    
+    chromium_arg = [
+        "--disable-gpu",
+        "--disable-dev-shm-usage", 
+        "--disable-web-security",
+        "--disable-features=VizDisplayCompositor",
+        "--no-sandbox",
+    ]
     try:
-        driver = Driver(browser="chrome",
-        proxy=proxy,
-        uc=True,
-        no_sandbox=True,
-        window_size="1920,1080",
-        disable_gpu=True,
-        headless=True,
-        incognito=True,
-        disable_gpu=True,
-        disable_dev_shm_usage=True,
-        disable_web_security=True,
-        disable_features="VizDisplayCompositor",
-        chromium_arg = [
-            "--disable-gpu",
-            "--disable-dev-shm-usage", 
-            "--disable-web-security",
-            "--disable-features=VizDisplayCompositor",
-            "--no-sandbox",
-            "--headless",
-            "--window-size=1920,1080"
-        ]
-        )
+        driver = Driver(browser="chrome", proxy=proxy, uc=True, no_sandbox=True, window_size="1920,1080", disable_gpu=True,
+                        headless=True,
+                        chromium_arg=chromium_arg,
+                        incognito=True)
         driver.implicitly_wait(10)
         logger.info("✅ Web driver initialized successfully")
         return driver
@@ -91,7 +79,7 @@ def generate_country_hashtags(base_hashtag):
     logger.info(f"Generated {len(hashtag_variations)} hashtag variations")
     return hashtag_variations
 
-def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, country, existing_usernames):
+def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, country):
     """Collect unique profile URLs by browsing hashtag videos"""
     logger.info(f"🎬 Collecting profiles for #{hashtag} (Country: {country})")
     
@@ -104,6 +92,8 @@ def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, 
     video_elements = set()
     last_height = driver.execute_script("return document.body.scrollHeight")
     scroll_count = 0
+    existing_usernames = set(get_existing_usernames())
+    logger.info(f"Found {len(existing_usernames)} existing usernames in database")
 
     while len(profile_urls) < num_profiles:
         video_cards = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/video/"]')
@@ -152,8 +142,6 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
     start_time = time.time()
     logger.info(f"🚀 Starting TikTok profile scraping for hashtag: {base_hashtag}")
     logger.info(f"Target profiles: {num_profiles}")
-    existing_usernames = set(get_existing_usernames())
-    logger.info(f"Found {len(existing_usernames)} existing usernames in database")
     
     driver = None
     all_profiles = []
@@ -168,7 +156,7 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
             if len(all_profiles) >= num_profiles:
                 logger.info(f"Reached target profile count, stopping collection")
                 break
-            get_unique_profiles_via_videos(driver, hashtag, num_profiles, all_profiles, country, existing_usernames)
+            get_unique_profiles_via_videos(driver, hashtag, num_profiles, all_profiles, country)
 
         logger.info(f"✅ Phase 1 completed: {len(all_profiles)} profiles collected")
 
