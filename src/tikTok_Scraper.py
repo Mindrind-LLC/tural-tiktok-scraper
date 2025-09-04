@@ -23,32 +23,14 @@ def get_driver():
     logger.info("🚗 Initializing web driver...")
     
     # 🔹 Add Proxy Here
-    proxy = os.getenv("PROXY")  # Example: "http://username:password@proxyserver:port"
-    chromium_arg = [
-        "--headless",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--user-data-dir=/tmp/chrome-user-data",
-        "--remote-debugging-port=0",
-        "--disable-dev-shm-usage", 
-        "--disable-web-security",
-        "--disable-features=VizDisplayCompositor",
-        "--single-process",
-        "--no-zygote",
-        "--disable-logging",
-        "--disable-permissions-api",
+    proxy = os.getenv("PROXY") 
+    chrome_args = [
+        "--disable-dev-shm-usage",
         "--disable-notifications",
         "--disable-popup-blocking",
-        "--disable-translate",
-        "--disable-sync",
-        "--disable-background-networking",
-        "--disable-component-extensions-with-background-pages",
-        "--disable-client-side-phishing-detection",
-        "--disable-hang-monitor",
-        "--disable-prompt-on-repost",
-        "--disable-domain-reliability"
+        "--user-data-dir=/tmp/sb-profile",
     ]
+    chromium_arg = ",".join(chrome_args)
     try:
         driver = Driver(browser="chrome", proxy=proxy, uc=True, no_sandbox=True, window_size="1920,1080", disable_gpu=True,
                         headless=True,
