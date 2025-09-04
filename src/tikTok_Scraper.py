@@ -30,6 +30,11 @@ def get_driver():
         "--disable-web-security",
         "--disable-features=VizDisplayCompositor",
         "--no-sandbox",
+        "--disable-setuid-sandbox",  # Add this
+        "--user-data-dir=/tmp/chrome-user-data",  # Add this
+        "--data-path=/tmp/chrome-data",  # Add this
+        "--disk-cache-dir=/tmp/chrome-cache",  # Add this
+        "--homedir=/tmp"  # Add this
     ]
     try:
         driver = Driver(browser="chrome", proxy=proxy, uc=True, no_sandbox=True, window_size="1920,1080", disable_gpu=True,

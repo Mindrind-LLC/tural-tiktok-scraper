@@ -7,6 +7,10 @@ module.exports = {
       cwd: "/root/apps/tural-tiktok-scraper",
       env: {
         NODE_ENV: "production",
+        DISPLAY: ":99",
+        TMPDIR: "/tmp",
+        HOME: "/tmp",
+        CHROME_BIN: "/usr/bin/google-chrome",
       },
       instances: 1,
       autorestart: true,
