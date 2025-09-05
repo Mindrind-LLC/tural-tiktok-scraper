@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # CONFIGURATION
 BASE_HASHTAG = "games"
-NUM_PROFILES = 500
+NUM_PROFILES = 40
 SCROLL_PAUSE = (2, 4)
 
 def get_driver():
@@ -35,11 +35,11 @@ def get_driver():
             headless2=True,              # new headless, supports extensions
             proxy=proxy,                 # ← apply proxy here
             window_size="1920,1080",
+            disable_gpu=True,
             incognito=True,
             no_sandbox=True,
-            disable_gpu=True,
-            # optional: keep a persistent profile dir
-            # user_data_dir="/root/.cache/sb-profile",
+            page_load_strategy="eager",
+            ad_block=True
         )
         
         # Set timeout configurations after driver creation
@@ -238,17 +238,17 @@ def scrape_single_profile_with_retry(driver, url, country, base_hashtag, max_ret
             is_browser_error = any(keyword in error_msg.lower() for keyword in browser_error_keywords)
             
             if is_browser_error and attempt < max_retries - 1:
-                logger.info(f"🔄 Browser/connection error detected, restarting driver and retrying in 15 seconds...")
+                logger.info(f"🔄 Browser/connection error detected, restarting driver and retrying in 5 seconds...")
                 
                 try:
                     # Restart the driver
                     current_driver.quit()
-                    time.sleep(5)
+                    # time.sleep(5)
                     current_driver = get_driver()
                     logger.info("✅ Driver restarted successfully for retry")
                     
                     # Wait before retrying
-                    time.sleep(15)
+                    time.sleep(5)
                     continue
                     
                 except Exception as restart_error:
