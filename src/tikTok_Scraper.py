@@ -19,7 +19,7 @@ NUM_PROFILES = 500
 SCROLL_PAUSE = (2, 4)
 
 def get_driver():
-    """Initialize and configure the web driver"""
+    """Initialize and configure the web driver with improved timeout settings"""
     import pathlib
     from seleniumbase import __file__ as sb_file
 
@@ -28,22 +28,11 @@ def get_driver():
     # Proxy via env, e.g. PROXY="user:pass@host:port"
     proxy = os.getenv("PROXY").strip() or None
 
-    # Pin SeleniumBase's cached Chrome-for-Testing so it doesn't re-download
-    # sb_dir = pathlib.Path(sb_file).parent
-    # chrome_path = pathlib.Path(
-    #     os.getenv("CHROME_BIN")  # optional override
-    #     or sb_dir / "drivers" / "cft_drivers" / "chrome-linux64" / "chrome"
-    # )
-    # if not chrome_path.exists():
-    #     logger.info("⬇️ CFT Chrome missing -> downloading once…")
-    #     Driver(browser="chrome", uc=True, headless2=True, binary_location="cft").quit()
-
     try:
         driver = Driver(
             browser="chrome",
             uc=True,
             headless2=True,              # new headless, supports extensions
-            # binary_location=str(chrome_path) if chrome_path.exists() else "cft",
             proxy=proxy,                 # ← apply proxy here
             window_size="1920,1080",
             incognito=True,
@@ -52,11 +41,15 @@ def get_driver():
             # optional: keep a persistent profile dir
             # user_data_dir="/root/.cache/sb-profile",
         )
-        driver.implicitly_wait(10)
+        
+        # Set timeout configurations after driver creation
+        driver.implicitly_wait(15)       # Increased from 10 to 15 seconds
+        driver.set_page_load_timeout(60) # 60 seconds for page load
+        driver.set_script_timeout(30)    # 30 seconds for script execution
+        
         logger.info(
-            "✅ Web driver initialized (proxy=%s, chrome=%s)",
-            proxy or "NONE",
-            # str(chrome_path),
+            "✅ Web driver initialized with improved timeouts (proxy=%s)",
+            proxy or "NONE"
         )
         return driver
     except Exception as e:
@@ -157,8 +150,123 @@ def get_unique_profiles_via_videos(driver, hashtag, num_profiles, profile_urls, 
 
     logger.info(f"📊 Profile collection completed for #{hashtag}: {len(profile_urls)} profiles found")
 
+def scrape_single_profile_with_retry(driver, url, country, base_hashtag, max_retries=3):
+    """Scrape a single profile with retry logic and driver restart capability
+    Returns: (result, error_type, updated_driver)
+    """
+    current_driver = driver
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Attempting to scrape profile (attempt {attempt + 1}/{max_retries}): {url}")
+            
+            # Navigate to profile with timeout handling
+            current_driver.get(url)
+            human_sleep(3, 5)
+
+            username = extract_username_from_url(url)
+            if not username:
+                logger.warning(f"Skipping profile - could not extract username: {url}")
+                return None, "username_extraction_failed", current_driver
+            
+            logger.info(f"Processing profile: {username}")
+
+            # Initialize profile data
+            bio, followers, likes, image_url = "", "", "", ""
+
+            # Extract bio
+            try:
+                bio_elem = current_driver.find_element(By.CSS_SELECTOR, 'h2[data-e2e="user-bio"]')
+                bio = bio_elem.text.strip()
+                logger.debug(f"Bio extracted: {bio[:50]}...")
+            except NoSuchElementException:
+                logger.debug("No bio found for this profile")
+
+            # Extract followers count
+            try:
+                stats = current_driver.find_elements(By.CSS_SELECTOR, 'strong[data-e2e="followers-count"]')
+                if stats:
+                    followers = stats[0].text.strip()
+                    logger.debug(f"Followers: {followers}")
+            except Exception as e:
+                logger.debug(f"Could not extract followers: {e}")
+
+            # Extract likes count
+            try:
+                likes_elem = current_driver.find_element(By.CSS_SELECTOR, 'strong[data-e2e="likes-count"]')
+                likes = likes_elem.text.strip()
+                logger.debug(f"Likes: {likes}")
+            except NoSuchElementException:
+                logger.debug("No likes count found")
+
+            # Extract profile image
+            try:
+                img_elem = current_driver.find_element(By.CSS_SELECTOR, 'div[data-e2e="user-avatar"]').find_element(By.TAG_NAME,"img")
+                image_url = img_elem.get_attribute("src")
+                logger.debug(f"Profile image URL extracted")
+            except NoSuchElementException:
+                logger.debug("No profile image found")
+
+            # Create profile object
+            profile_data = Profile(
+                Username=username,
+                Bio=bio,
+                Followers=parse_count(followers),
+                Likes=parse_count(likes),
+                Profile_URL=url,
+                Image_URL=image_url,
+                Country=country.upper(),
+                Hashtag=base_hashtag.lower()
+            )
+            
+            # Save to Airtable
+            logger.info(f"💾 Saving profile {username} to Airtable...")
+            save_result = save_profile_to_airtable(profile_data.dict())
+            
+            if save_result:
+                logger.info(f"✅ Profile {username} saved successfully")
+                return profile_data.dict(), "success", current_driver
+            else:
+                logger.error(f"❌ Failed to save profile {username} to Airtable")
+                return None, "airtable_save_failed", current_driver
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.warning(f"⚠️ Attempt {attempt + 1} failed for {url}: {error_msg}")
+            
+            # Check if it's a connection/timeout/browser error that requires driver restart
+            browser_error_keywords = ['timeout', 'connection', 'refused', 'pool', 'session', 'browser', 'chrome', 'webdriver']
+            is_browser_error = any(keyword in error_msg.lower() for keyword in browser_error_keywords)
+            
+            if is_browser_error and attempt < max_retries - 1:
+                logger.info(f"🔄 Browser/connection error detected, restarting driver and retrying in 15 seconds...")
+                
+                try:
+                    # Restart the driver
+                    current_driver.quit()
+                    time.sleep(5)
+                    current_driver = get_driver()
+                    logger.info("✅ Driver restarted successfully for retry")
+                    
+                    # Wait before retrying
+                    time.sleep(15)
+                    continue
+                    
+                except Exception as restart_error:
+                    logger.error(f"❌ Failed to restart driver: {restart_error}")
+                    return None, "driver_restart_failed", current_driver
+                    
+            elif is_browser_error:
+                logger.error(f"❌ Max retries exceeded for {url} due to browser/connection issues")
+                return None, "connection_error", current_driver
+            else:
+                # Non-browser error, don't retry
+                logger.error(f"❌ Non-retryable error for {url}: {error_msg}")
+                return None, "non_retryable_error", current_driver
+    
+    return None, "max_retries_exceeded", current_driver
+
 def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES):
-    """Main scraping function"""
+    """Main scraping function with improved error handling"""
     start_time = time.time()
     logger.info(f"🚀 Starting TikTok profile scraping for hashtag: {base_hashtag}")
     logger.info(f"Target profiles: {num_profiles}")
@@ -180,92 +288,45 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
 
         logger.info(f"✅ Phase 1 completed: {len(all_profiles)} profiles collected")
 
-        # Phase 2: Scrape profiles
+        # Phase 2: Scrape profiles with retry logic
         logger.info("🔍 Phase 2: Scraping individual profiles...")
         scraped_profiles = []
         skipped_count = 0
         error_count = 0
+        connection_error_count = 0
         
         for i, profile in enumerate(all_profiles, 1):
             url = profile["profile_link"]
             country = profile["country"]
             logger.info(f"Scraping profile {i}/{len(all_profiles)}: {url} (Country: {country})")
             
-            try:
-                driver.get(url)
-                human_sleep(3, 5)
-
-                username = extract_username_from_url(url)
-                if not username:
-                    logger.warning(f"Skipping profile - could not extract username: {url}")
+            # Use retry logic for profile scraping
+            result, error_type, updated_driver = scrape_single_profile_with_retry(driver, url, country, base_hashtag)
+            
+            # Update driver reference in case it was restarted
+            driver = updated_driver
+            
+            if result:
+                scraped_profiles.append(result)
+            else:
+                if error_type in ["connection_error", "driver_restart_failed"]:
+                    connection_error_count += 1
+                    # If too many connection errors, consider restarting driver
+                    if connection_error_count >= 5:
+                        logger.warning("⚠️ Too many connection errors, restarting driver...")
+                        try:
+                            driver.quit()
+                            time.sleep(5)
+                            driver = get_driver()
+                            connection_error_count = 0
+                            logger.info("✅ Driver restarted successfully")
+                        except Exception as e:
+                            logger.error(f"❌ Failed to restart driver: {e}")
+                            break
+                elif error_type == "username_extraction_failed":
                     skipped_count += 1
-                    continue
-                
-                logger.info(f"Processing profile: {username} ({len(scraped_profiles)+1}/{len(all_profiles)})")
-
-                # Initialize profile data
-                bio, followers, likes, image_url = "", "", "", ""
-
-                # Extract bio
-                try:
-                    bio_elem = driver.find_element(By.CSS_SELECTOR, 'h2[data-e2e="user-bio"]')
-                    bio = bio_elem.text.strip()
-                    logger.debug(f"Bio extracted: {bio[:50]}...")
-                except NoSuchElementException:
-                    logger.debug("No bio found for this profile")
-
-                # Extract followers count
-                try:
-                    stats = driver.find_elements(By.CSS_SELECTOR, 'strong[data-e2e="followers-count"]')
-                    if stats:
-                        followers = stats[0].text.strip()
-                        logger.debug(f"Followers: {followers}")
-                except Exception as e:
-                    logger.debug(f"Could not extract followers: {e}")
-
-                # Extract likes count
-                try:
-                    likes_elem = driver.find_element(By.CSS_SELECTOR, 'strong[data-e2e="likes-count"]')
-                    likes = likes_elem.text.strip()
-                    logger.debug(f"Likes: {likes}")
-                except NoSuchElementException:
-                    logger.debug("No likes count found")
-
-                # Extract profile image
-                try:
-                    img_elem = driver.find_element(By.CSS_SELECTOR, 'div[data-e2e="user-avatar"]').find_element(By.TAG_NAME,"img")
-                    image_url = img_elem.get_attribute("src")
-                    logger.debug(f"Profile image URL extracted")
-                except NoSuchElementException:
-                    logger.debug("No profile image found")
-
-                # Create profile object
-                profile_data = Profile(
-                    Username=username,
-                    Bio=bio,
-                    Followers=parse_count(followers),
-                    Likes=parse_count(likes),
-                    Profile_URL=url,
-                    Image_URL=image_url,
-                    Country=country.upper(),
-                    Hashtag=base_hashtag.lower()
-                )
-                
-                # Save to Airtable
-                logger.info(f"💾 Saving profile {username} to Airtable...")
-                save_result = save_profile_to_airtable(profile_data.dict())
-                
-                if save_result:
-                    scraped_profiles.append(profile_data.dict())
-                    logger.info(f"✅ Profile {username} saved successfully")
                 else:
-                    logger.error(f"❌ Failed to save profile {username} to Airtable")
                     error_count += 1
-
-            except Exception as e:
-                logger.error(f"❌ Error scraping profile {url}: {e}")
-                error_count += 1
-                continue
 
         # Final summary
         end_time = time.time()
@@ -275,10 +336,12 @@ def scrape_tiktok_profiles(base_hashtag=BASE_HASHTAG, num_profiles=NUM_PROFILES)
         logger.info(f"📊 Summary:")
         logger.info(f"   - Total profiles found: {len(all_profiles)}")
         logger.info(f"   - Successfully scraped: {len(scraped_profiles)}")
-        logger.info(f"   - Skipped (already exists): {skipped_count}")
-        logger.info(f"   - Errors: {error_count}")
+        logger.info(f"   - Skipped (username extraction failed): {skipped_count}")
+        logger.info(f"   - Connection errors: {connection_error_count}")
+        logger.info(f"   - Other errors: {error_count}")
         logger.info(f"   - Duration: {duration:.2f} seconds")
-        logger.info(f"   - Average time per profile: {duration/len(all_profiles):.2f} seconds")
+        if len(all_profiles) > 0:
+            logger.info(f"   - Average time per profile: {duration/len(all_profiles):.2f} seconds")
 
     except Exception as e:
         logger.error(f"❌ Critical error in scraping process: {e}")
