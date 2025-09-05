@@ -1188,3 +1188,32 @@ Stacktrace:
 2025-09-03 20:01:19,560 - MainThread - INFO - 📅 Scheduler stopped
 2025-09-03 20:01:19,560 - MainThread - INFO - ⏳ Waiting for 1 active tasks to complete...
 2025-09-03 20:01:19,819 - MainThread - INFO - 🛑 Shutdown signal received, cleaning up...
+2025-09-05 18:02:36,015 - MainThread - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-09-05 18:02:36,016 - MainThread - INFO - Added job "Crown TikTok Scraping" to job store "default"
+2025-09-05 18:02:36,016 - MainThread - INFO - Scheduler started
+2025-09-05 18:02:36,016 - MainThread - INFO - 👑 Crown job scheduler started - will run every 24 hours sequentially
+2025-09-05 18:02:36,016 - MainThread - INFO - Added job "Health Monitoring" to job store "default"
+2025-09-05 18:02:36,017 - MainThread - INFO - 💓 Health monitor scheduled - runs every 30 minutes
+2025-09-05 18:02:36,017 - MainThread - INFO - 🚀 Starting TikTok Scraper Crown Job System...
+2025-09-05 18:02:36,017 - MainThread - INFO - 📁 Using simplified architecture:
+2025-09-05 18:02:36,017 - MainThread - INFO -    - main.py: Crown job scheduling (sequential processing)
+2025-09-05 18:02:36,017 - MainThread - INFO -    - tikTok_Scraper.py: Core scraping functionality
+2025-09-05 18:02:36,017 - MainThread - INFO -    - airtable.py: Airtable integration for hashtags and data
+2025-09-05 18:02:36,017 - MainThread - INFO -    - task_manager.py: Available for future API-based tasks
+2025-09-05 18:02:36,017 - MainThread - INFO - 👑 Starting immediate Crown job test run...
+2025-09-05 18:02:36,017 - MainThread - INFO - ⏰ This will test the Crown job functionality before the 24-hour schedule begins
+2025-09-05 18:02:36,017 - MainThread - INFO - 👑 Crown job triggered - starting scheduled scraping
+2025-09-05 18:02:37,058 - MainThread - INFO - Found 4 active hashtags for crown job
+2025-09-05 18:02:37,058 - MainThread - INFO - 👑 Processing hashtag 1/4: crypto
+2025-09-05 18:02:37,059 - MainThread - INFO - Starting scraper for hashtag: crypto
+2025-09-05 18:02:37,059 - MainThread - INFO - 🚀 Starting TikTok profile scraping for hashtag: crypto
+2025-09-05 18:02:37,059 - MainThread - INFO - Target profiles: 500
+2025-09-05 18:02:38,170 - MainThread - INFO - ✅ Using Chrome channel
+2025-09-05 18:02:41,612 - MainThread - INFO - [Proxy check] httpbin response: {
+  "origin": "38.13.129.95"
+}
+2025-09-05 18:02:41,623 - MainThread - INFO - ✅ Playwright ready (proxy=c7a43522e2000b561ab6__cr.us:b16012b413a3bddf@gw.dataimpulse.com:823)
+2025-09-05 18:02:41,623 - MainThread - INFO - 📥 Phase 1: Collecting profile URLs…
+2025-09-05 18:02:41,623 - MainThread - INFO - 🌍 Generating country hashtag variations for: crypto
+2025-09-05 18:02:41,623 - MainThread - INFO - Generated 80 hashtag variations
+2025-09-05 18:02:41,623 - MainThread - INFO - 🎬 Collecting profiles for #cryptousa (Country: usa)

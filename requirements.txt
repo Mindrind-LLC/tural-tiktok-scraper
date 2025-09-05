@@ -6,5 +6,7 @@ fastapi
 langchain
 langchain-google-genai
 uvicorn
-seleniumbase>=4.38.2
+# seleniumbase>=4.38.2
 APScheduler
+playwright
+pydantic
