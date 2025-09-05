@@ -5,4 +5,4 @@ cli_logs.log
 /__pycache__
 *.pem
 server_command.txt
-scraper_logs.log
+*.log

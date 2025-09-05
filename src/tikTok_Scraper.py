@@ -20,24 +20,44 @@ SCROLL_PAUSE = (2, 4)
 
 def get_driver():
     """Initialize and configure the web driver"""
+    import pathlib
+    from seleniumbase import __file__ as sb_file
+
     logger.info("🚗 Initializing web driver...")
-    
-    # 🔹 Add Proxy Here
-    proxy = os.getenv("PROXY") 
-    chrome_args = [
-        "--disable-dev-shm-usage",
-        "--disable-notifications",
-        "--disable-popup-blocking",
-        "--user-data-dir=/tmp/sb-profile",
-    ]
-    chromium_arg = ",".join(chrome_args)
+
+    # Proxy via env, e.g. PROXY="user:pass@host:port"
+    proxy = os.getenv("PROXY").strip() or None
+
+    # Pin SeleniumBase's cached Chrome-for-Testing so it doesn't re-download
+    # sb_dir = pathlib.Path(sb_file).parent
+    # chrome_path = pathlib.Path(
+    #     os.getenv("CHROME_BIN")  # optional override
+    #     or sb_dir / "drivers" / "cft_drivers" / "chrome-linux64" / "chrome"
+    # )
+    # if not chrome_path.exists():
+    #     logger.info("⬇️ CFT Chrome missing -> downloading once…")
+    #     Driver(browser="chrome", uc=True, headless2=True, binary_location="cft").quit()
+
     try:
-        driver = Driver(browser="chrome", proxy=proxy, uc=True, no_sandbox=True, window_size="1920,1080", disable_gpu=True,
-                        headless=True,
-                        chromium_arg=chromium_arg,
-                        incognito=True)
+        driver = Driver(
+            browser="chrome",
+            uc=True,
+            headless2=True,              # new headless, supports extensions
+            # binary_location=str(chrome_path) if chrome_path.exists() else "cft",
+            proxy=proxy,                 # ← apply proxy here
+            window_size="1920,1080",
+            incognito=True,
+            no_sandbox=True,
+            disable_gpu=True,
+            # optional: keep a persistent profile dir
+            # user_data_dir="/root/.cache/sb-profile",
+        )
         driver.implicitly_wait(10)
-        logger.info("✅ Web driver initialized successfully")
+        logger.info(
+            "✅ Web driver initialized (proxy=%s, chrome=%s)",
+            proxy or "NONE",
+            # str(chrome_path),
+        )
         return driver
     except Exception as e:
         logger.error(f"❌ Failed to initialize web driver: {e}")
