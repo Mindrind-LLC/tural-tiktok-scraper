@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from src.schemas import Profile
 from src.utils import parse_count
 from src.airtable import save_profile_to_airtable, get_existing_usernames
+from src.utils import parse_proxy_env, human_sleep, generate_country_hashtags
 
 load_dotenv()
 
@@ -24,47 +25,10 @@ PAGE_GOTO_TIMEOUT_MS = 60_000     # 60s
 SEL_TIMEOUT_MS       = 12_000     # 12s for element queries
 RETRY_SLEEP_SEC      = 5
 
-# -------------------------
-# Small helpers
-# -------------------------
-def human_sleep(min_s: float, max_s: float):
-    time.sleep(random.uniform(min_s, max_s))
 
 def extract_username_from_url(url: str) -> Optional[str]:
     m = re.search(r"tiktok\.com/@([\w.\-]+)", url)
     return m.group(1) if m else None
-
-def parse_proxy_env(env_val: str) -> Optional[dict]:
-    """
-    Accepts:
-      - user:pass@host:port
-      - host:port
-    Returns Playwright 'proxy' dict or None.
-    """
-    if not env_val:
-        return None
-    env_val = env_val.strip()
-    if "@" in env_val:
-        creds, hostport = env_val.split("@", 1)
-        user, pwd = creds.split(":", 1)
-        return {"server": "http://" + hostport, "username": user, "password": pwd}
-    return {"server": "http://" + env_val}
-
-def generate_country_hashtags(base_hashtag: str) -> List[Tuple[str, str]]:
-    logger.info(f"🌍 Generating country hashtag variations for: {base_hashtag}")
-    countries = [
-        "usa", "uk", "canada", "australia", "germany", "france", "italy",
-        "spain", "japan", "china", "india", "brazil", "mexico", "russia",
-        "southkorea", "uae", "saudiarabia", "turkey", "indonesia", "singapore"
-    ]
-    out = []
-    for c in countries:
-        out.append((f"{base_hashtag}{c}", c))
-        out.append((f"{base_hashtag}_{c}", c))
-        out.append((f"{base_hashtag}-in-{c}", c))
-        out.append((f"{base_hashtag}-{c}", c))
-    logger.info(f"Generated {len(out)} hashtag variations")
-    return out
 
 # -------------------------
 # Playwright bootstrap
