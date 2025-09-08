@@ -169,7 +169,7 @@ def get_unique_profiles_via_videos(page, hashtag: str, num_profiles: int,
         logger.warning(f"No video cards detected quickly for #{hashtag}. "
                        f"Content may be geo/age gated or proxy not effective. Will still try scrolling…")
 
-    existing_usernames = set(get_existing_usernames())
+    existing_usernames = set(get_existing_usernames(source="TikTok"))
     logger.info(f"Found {len(existing_usernames)} existing usernames in database")
 
     seen_video_hrefs = set()

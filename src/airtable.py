@@ -36,20 +36,47 @@ def save_profile_to_airtable(profile_data: dict):
         print(f"❌ Error saving to Airtable: {e}")
         return None
     
-def get_existing_usernames():
+def get_existing_usernames(source: str = None):
     """
-    Fetch all usernames from the Airtable table.
-    Returns a Python list of usernames.
+    Fetch usernames from the Airtable table, optionally filtered by source.
+    
+    Args:
+        source (str, optional): Filter by source platform ("Instagram", "Tiktok", etc.). 
+                               If None, returns all usernames regardless of source.
+    
+    Returns:
+        list: List of usernames matching the source filter
     """
-    # Fetch all records
-    records = data_table.all()    
-    # Extract Username field values
-    usernames = []
-    for record in records:
-        username = record["fields"].get("Username")
-        if username:  # avoid None values
-            usernames.append(username)   
-    return usernames
+    try:
+        # Fetch all records
+        records = data_table.all()    
+        
+        # Extract Username field values with optional source filtering
+        usernames = []
+        for record in records:
+            fields = record["fields"]
+            username = fields.get("Username")
+            record_source = fields.get("Source")
+            
+            # Skip if no username
+            if not username:
+                continue
+                
+            # If source filter is specified, check if it matches
+            if source is not None:
+                if record_source and record_source.lower() == source.lower():
+                    usernames.append(username)
+            else:
+                # No source filter, include all usernames
+                usernames.append(username)
+        
+        print(f"✅ Fetched {len(usernames)} usernames from Airtable" + 
+              (f" (source: {source})" if source else ""))
+        return usernames
+        
+    except Exception as e:
+        print(f"❌ Error fetching usernames from Airtable: {e}")
+        return []
 
 def get_active_hashtags():
     """

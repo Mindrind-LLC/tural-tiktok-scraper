@@ -1105,7 +1105,7 @@ def main():
     # Get credentials from environment variables
     username = os.getenv("INSTAGRAM_USERNAME", "jame.swong1954")
     password = os.getenv("INSTAGRAM_PASSWORD", "uzrbxenz9512")
-    existing_usernames = get_existing_usernames()
+    existing_usernames = get_existing_usernames(source="Instagram")
 
     if not username or not password:
         logger.error("❌ Please set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD environment variables")
