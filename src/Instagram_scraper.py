@@ -565,6 +565,178 @@ def safe_text(el):
 def to_profile_url(username: str) -> str:
     return f"https://www.instagram.com/{username.strip('/')}/"
 
+
+
+# --- Helpers tuned to your header structure ---
+
+def _clean_text(s: Optional[str]) -> str:
+    if not s:
+        return ""
+    lines = [ln.strip() for ln in s.splitlines() if ln.strip()]
+    return " ".join(lines)
+
+def _first_attr(locator, attr: str) -> Optional[str]:
+    try:
+        if locator and locator.count() > 0:
+            return locator.first.get_attribute(attr)
+    except Exception:
+        pass
+    return None
+
+def _first_text(locator, timeout=1500) -> str:
+    try:
+        if locator and locator.count() > 0:
+            return locator.first.inner_text(timeout=timeout) or ""
+    except Exception:
+        pass
+    return ""
+
+def _extract_counts_and_bio_from_header(page: Page) -> Dict[str, Any]:
+    """
+    Extract posts/followers/following + username (from DOM) + bio + image url
+    based on the header HTML you provided.
+    """
+    out = {
+        "username_dom": None,
+        "bio": "",
+        "image_url": None,
+        "posts": None,
+        "followers": None,
+        "following": None,
+    }
+
+    # username from header h2 > span (e.g., mastercryptohq)
+    try:
+        out["username_dom"] = _first_text(page.locator("header h2 span")).strip() or None
+    except Exception:
+        pass
+
+    # profile image
+    try:
+        img = page.locator('header img[alt$="profile picture"], header img[alt*="profile picture"]')
+        out["image_url"] = _first_attr(img, "src")
+    except Exception:
+        pass
+
+    # counts (li list: posts, followers, following)
+    try:
+        li_nodes = page.locator("header ul li")
+        total = li_nodes.count()
+        for i in range(total):
+            li = li_nodes.nth(i)
+            text = (li.inner_text() or "").lower()
+            # prefer numeric from title attr if present (e.g., title="242,395")
+            title_num = _first_attr(li.locator("[title]"), "title")
+            # else take first numeric token (might be 242K)
+            if not title_num:
+                m = re.search(r"([\d.,]+[kKmM]?)", text)
+                title_num = m.group(1) if m else None
+
+            if "post" in text:
+                out["posts"] = parse_count(title_num) if title_num else None
+            elif "follower" in text:
+                out["followers"] = parse_count(title_num) if title_num else None
+            elif "following" in text:
+                out["following"] = parse_count(title_num) if title_num else None
+    except Exception:
+        pass
+
+    # bio block: the span that contains multi-line profile text right under the counts
+    # (your dump shows a span with classes: _ap3a _aaco _aacu _aacx _aad7 _aade)
+    try:
+        bio_span = page.locator('header span._ap3a._aaco._aacu._aacx._aad7._aade')
+        bio_txt = _first_text(bio_span)
+        out["bio"] = _clean_text(bio_txt)
+    except Exception:
+        pass
+
+    # fallback bio if still empty: take the second/third header section and strip UI labels
+    if not out["bio"]:
+        try:
+            sections = page.locator("header section")
+            # heuristic: the section after counts often holds the bio snippet
+            if sections.count() >= 3:
+                txt = sections.nth(2).inner_text(timeout=1500) or ""
+                # remove common UI words
+                bad = ("follow", "message", "similar accounts", "options", "threads", "highlights")
+                keep = []
+                for ln in (txt.splitlines()):
+                    l = ln.strip()
+                    if l and not any(b in l.lower() for b in bad):
+                        keep.append(l)
+                out["bio"] = _clean_text("\n".join(keep))
+        except Exception:
+            pass
+
+    return out
+
+
+def _sample_average_likes(page: Page, max_posts: int = 4) -> Optional[int]:
+    """
+    Open up to `max_posts` recent posts and estimate average likes.
+    Skips videos that display "views" instead of likes.
+    """
+    try:
+        tiles = page.locator('a[href^="/p/"]')
+        n = min(tiles.count(), max_posts)
+        if n == 0:
+            return None
+
+        total_likes = 0
+        got = 0
+        for i in range(n):
+            try:
+                tiles.nth(i).click()
+                page.wait_for_selector('div[role="dialog"], article[role="presentation"]', timeout=5000)
+                human_sleep(0.7, 1.2)
+
+                # Try a few places where likes text appears
+                text_blobs = []
+                # Common likes line in the dialog section
+                text_blobs.append(_first_text(page.locator('section article div:has-text("likes")')))
+                # Any element containing "... likes"
+                try:
+                    candidates = page.locator('div, span, a').filter(has_text=re.compile(r"\blikes\b", re.I))
+                    cnt = candidates.count()
+                    for j in range(min(cnt, 6)):
+                        t = candidates.nth(j).inner_text(timeout=800)
+                        if t:
+                            text_blobs.append(t)
+                except Exception:
+                    pass
+
+                likes_value = None
+                for t in text_blobs:
+                    m = re.search(r"([\d.,]+[kKmM]?)\s+likes?", t, flags=re.I)
+                    if m:
+                        likes_value = parse_count(m.group(1))
+                        break
+
+                # Accumulate only if we truly found likes (skip views)
+                if isinstance(likes_value, int):
+                    total_likes += likes_value
+                    got += 1
+
+            except Exception:
+                pass
+            finally:
+                # Close the post modal
+                try:
+                    page.locator('svg[aria-label="Close"], button:has-text("Close")').first.click(timeout=1500)
+                except Exception:
+                    try:
+                        page.keyboard.press("Escape")
+                    except Exception:
+                        pass
+                human_sleep(0.3, 0.7)
+
+        if got > 0:
+            return int(round(total_likes / got))
+    except Exception:
+        pass
+    return None
+
+
 class IGInfluencerFinder:
     def __init__(self, page: Page, base_delay=(0.8, 2.0), max_actions_per_min=10):
         self.page = page
@@ -577,14 +749,10 @@ class IGInfluencerFinder:
         def on_response(resp):
             try:
                 url = resp.url
-                if "/api/graphql" in url and "text" in resp.request.headers.get("accept", ""):
-                    # only parse small-ish JSONs to avoid heavy waits
-                    if "application/json" in resp.headers.get("content-type", ""):
-                        data = resp.json()
-                        # Heuristic: stash latest payloads that contain 'user' or 'hashtag'
-                        if isinstance(data, dict):
-                            if "data" in data:
-                                self.graphql_latest = data["data"]
+                if "/api/graphql" in url and "application/json" in resp.headers.get("content-type", ""):
+                    data = resp.json()
+                    if isinstance(data, dict) and "data" in data:
+                        self.graphql_latest = data["data"]
             except Exception:
                 pass
         self.page.on("response", on_response)
@@ -601,31 +769,28 @@ class IGInfluencerFinder:
         # Scroll batches to load posts
         for _ in range(10):
             self.page.mouse.wheel(0, 1800)
-            human_sleep(1.2, 2.4)
-            # Open visible post tiles and fetch owner usernames quickly (lightweight peek)
-            tiles = self.page.locator('a[href^="/p/"]').all()[:12]
-            for a in tiles:
+            human_sleep(1.0, 2.0)
+            tiles = self.page.locator('a[href^="/p/"]')
+            cnt = min(tiles.count(), 12)
+            for i in range(cnt):
                 try:
-                    a.hover()
-                    a.click(button="left")
-                    human_sleep(0.8, 1.6)
-                    # Owner handle often appears in the post header modal/sheet
-                    # Try fast DOM extraction
-                    handle_nodes = self.page.locator('header a[href^="/"][role="link"]').all()
-                    for h in handle_nodes:
-                        href = h.get_attribute("href") or ""
-                        if href.count("/") >= 2 and "/p/" not in href and "/explore/" not in href:
+                    tiles.nth(i).click()
+                    human_sleep(0.6, 1.2)
+                    # Owner handle usually appears in the post header modal
+                    handle_nodes = self.page.locator('header a[href^="/"][role="link"]')
+                    hc = min(handle_nodes.count(), 4)
+                    for j in range(hc):
+                        href = handle_nodes.nth(j).get_attribute("href") or ""
+                        if href.startswith("/") and "/p/" not in href and "/explore/" not in href:
                             uname = href.strip("/").split("/")[0]
                             if 2 <= len(uname) <= 30:
-                                print("Username: ", uname)
                                 usernames.add(uname)
-                    # Close post modal/sheet
+                    # Close modal
                     try:
-                        self.page.locator('svg[aria-label="Close"],button:has-text("Close")').first.click(timeout=1500)
+                        self.page.locator('svg[aria-label="Close"], button:has-text("Close")').first.click(timeout=1500)
                     except Exception:
                         self.page.keyboard.press("Escape")
                 except Exception:
-                    # Ignore tiles that failed to open
                     pass
 
             if len(usernames) >= max_users:
@@ -634,165 +799,91 @@ class IGInfluencerFinder:
         logger.info(f"✅ Found {len(usernames)} usernames from #{hashtag}")
         return list(usernames)[:max_users]
 
-    # -------- Profile scrape --------
-    def scrape_profile(self, username: str) -> Optional[dict]:
-        url = to_profile_url(username)
+    # -------- Profile scrape -> Profile model --------
+    def scrape_profile(self, username: str, seed_hashtag: str, country: Optional[str]) -> Optional[Profile]:
+        url = f"https://www.instagram.com/{username.strip('/')}/"
         logger.info(f"👤 Scraping profile: {username} -> {url}")
         self.graphql_latest = {}
         self.page.goto(url, wait_until="domcontentloaded", timeout=PAGE_GOTO_TIMEOUT_MS)
-        human_sleep(1.2, 2.2)
+        human_sleep(1.0, 2.0)
 
-        # Grab whole header text block; IG A/B tests often move counters around
-        header = self.page.locator("header").first
-        header_txt = safe_text(header)
+        # Header-exact extraction (tuned to your DOM)
+        hdr = _extract_counts_and_bio_from_header(self.page)
 
-        # Try to get counts from og:description first (often contains "X Followers, Y Following")
-        followers = following = posts_count = None
-        try:
-            og = self.page.locator('meta[property="og:description"]').get_attribute("content")
-            print("OG: ", og)
-            if og:
-                # e.g. "5,432 Followers, 122 Following, 86 Posts - See Instagram photos ..."
-                # Updated regex to handle K, M suffixes and various formats
-                matches = re.findall(r"([\d,.]+[KMB]?)\s+(Followers|Following|Posts?)", og, flags=re.I)
-                # matches is list of tuples [(num, label), (num, label), ...]
-                for n, label in matches:
-                    val = parse_count(n)
-                    if "follower" in label.lower(): followers = followers or val
-                    elif "following" in label.lower(): following = following or val
-                    elif "post" in label.lower(): posts_count = posts_count or val
-                print("Followers: ", followers)
-                print("Following: ", following)
-                print("Posts: ", posts_count)
-        except Exception:
-            pass
+        # Followers (required by your model defaults)
+        followers = hdr.get("followers") or 0
+        bio_text = hdr.get("bio") or None
+        image_url = hdr.get("image_url")
 
-        # Fallback: parse header text for counters
-        if followers is None or following is None or posts_count is None:
-            def parse_num(label):
-                m = re.search(rf"([\d,\.]+)\s+{label}", header_txt, flags=re.I)
-                if not m: return None
-                return int(re.sub(r"[^\d]", "", m.group(1)) or "0")
-            followers = followers or parse_num("Followers?")
-            following = following or parse_num("Following")
-            posts_count = posts_count or parse_num("Posts?")
+        # Average likes over a few recent posts (best-effort)
+        avg_likes = _sample_average_likes(self.page, max_posts=4) or 0
 
-        # Extract name/bio/external url (robust-ish)
-        full_name = ""
-        bio_text = ""
-        external_url = None
-        try:
-            # The <h1> sometimes holds username; the name can be in header section below
-            name_node = self.page.locator("header section h1, header section span").first
-            full_name = (name_node.inner_text(timeout=1200) or "").strip()
-        except Exception:
-            pass
-        try:
-            bio_area = self.page.locator("header ~ div, section:has(a[rel*='nofollow'])").first
-            bio_text = (bio_area.inner_text(timeout=1500) or "").strip()
-            ext = bio_area.locator("a[rel*='nofollow']").first
-            external_url = ext.get_attribute("href") if ext and ext.count() else None
-        except Exception:
-            pass
+        profile = Profile(
+            Username=username,
+            Bio=bio_text,
+            Followers=followers,
+            Likes=avg_likes,
+            Profile_URL=url,
+            Image_URL=image_url,
+            Hashtag=seed_hashtag,
+            Blacklist=False,
+            Source="Instagram",
+            Country=country,
+        )
+        logger.info(
+            f"🧾 Profile: @{username} | followers={profile.Followers} | likes_avg={profile.Likes} | "
+            f"image={'yes' if profile.Image_URL else 'no'} | hashtag={seed_hashtag} | country={country}"
+            f"image_url={profile.Image_URL}"
+            f"profile_url={profile.Profile_URL}"
+            f"bio={profile.Bio}"
 
-        # GraphQL augmentation if available
-        gql = self.graphql_latest or {}
-        user_node = None
-        try:
-            # Walk JSON heuristically to find a 'user' node
-            def find_user(d):
-                if isinstance(d, dict):
-                    if "user" in d and isinstance(d["user"], dict): return d["user"]
-                    for v in d.values():
-                        res = find_user(v)
-                        if res: return res
-                elif isinstance(d, list):
-                    for v in d:
-                        res = find_user(v)
-                        if res: return res
-                return None
-            user_node = find_user(gql)
-        except Exception:
-            pass
-
-        is_verified = None
-        is_business = None
-        if user_node:
-            full_name = user_node.get("full_name") or full_name
-            external_url = user_node.get("external_url") or external_url
-            bio_text = user_node.get("biography") or bio_text
-            is_verified = user_node.get("is_verified")
-            is_business = user_node.get("is_business_account") or user_node.get("is_professional_account")
-            followers = followers or user_node.get("edge_followed_by", {}).get("count")
-            following = following or user_node.get("edge_follow", {}).get("count")
-            posts_count = posts_count or user_node.get("edge_owner_to_timeline_media", {}).get("count")
-
-        # Email(s)
-        emails = extract_emails_freeform(bio_text)
-        # Optional: if external_url present, fetch its homepage text (requests with proxy) and look for emails
-        # Keep it off by default to reduce footprint; you can enable for deeper email coverage.
-
-        profile = {
-            "username": username,
-            "full_name": full_name or None,
-            "profile_url": url,
-            "bio": bio_text or None,
-            "external_url": external_url,
-            "followers": followers,
-            "following": following,
-            "posts_count": posts_count,
-            "is_verified": is_verified,
-            "is_business": is_business,
-            "emails": emails,
-            "source": "instagram",
-        }
-        logger.info(f"🧾 Profile scraped: {username} -> { {k:v for k,v in profile.items() if k in ('followers','emails','external_url')} }")
+        )
         return profile
 
-# --- Simple pipeline helpers (stubs) ---
 
-def dedupe_usernames(new_names: list[str], seen: set[str]) -> list[str]:
-    out = []
-    for n in new_names:
-        u = n.lower().strip()
-        if u and u not in seen:
-            out.append(u)
-            seen.add(u)
-    return out
-
-def save_to_airtable(record: dict):
-    # TODO: plug your Airtable client (same pattern as your TikTok bot)
-    # Upsert by username+source
-    logger.info(f"📤 (stub) Upserting to Airtable: {record.get('username')}")
-
-# --- Runner you can call after successful login ---
+# --- Runner: dedupe against Airtable + persist Profile objects ---
 
 def run_influencer_scrape(scraper: InstagramScraper,
-                          hashtags: list[str],
+                          hashtags: list[tuple[str, Optional[str]]],
                           max_per_tag: int = 40,
                           max_profiles_total: int = 200):
     page = scraper.page
     finder = IGInfluencerFinder(page)
-    seen = set()
+    seen_local: set[str] = set()
     total = 0
+
+    # Airtable dedupe (existing handles)
+    try:
+        existing = {u.lower() for u in (get_existing_usernames() or [])}
+    except Exception:
+        existing = set()
 
     for tag, country in hashtags:
         try:
             candidates = finder.discover_usernames_from_hashtag(tag, max_users=max_per_tag)
-            candidates = dedupe_usernames(candidates, seen)
             for uname in candidates:
-                if total >= max_profiles_total: 
+                key = uname.lower().strip()
+                if key in seen_local or key in existing:
+                    continue
+                if total >= max_profiles_total:
                     logger.info("🏁 Reached max_profiles_total")
                     return
-                prof = finder.scrape_profile(uname)
+
+                prof = finder.scrape_profile(uname, seed_hashtag=tag, country=country)
                 if prof:
-                    save_to_airtable(prof)
-                    total += 1
-                    human_sleep(1.1, 2.3)  # pacing
+                    # Persist to Airtable as your Profile model
+                    try:
+                        save_profile_to_airtable(prof.model_dump())
+                        total += 1
+                        seen_local.add(key)
+                        existing.add(key)
+                    except Exception as e:
+                        logger.warning(f"⚠️ Airtable save failed for @{uname}: {e}")
+                human_sleep(1.0, 2.0)  # pacing between profiles
+
         except Exception as e:
             logger.warning(f"Hashtag {tag} failed: {e}")
             human_sleep(6, 12)
-
 
 # -------------------------
 # Main Function
