@@ -29,6 +29,7 @@ LOGIN_TIMEOUT_MS = 30_000      # 30s for login process
 # Instagram URLs
 INSTAGRAM_LOGIN_URL = "https://www.instagram.com/"
 INSTAGRAM_BASE_URL = "https://www.instagram.com/"
+BASE_HASHTAG = "crypto"
 
 # -------------------------
 # Helper Functions
@@ -757,65 +758,186 @@ class IGInfluencerFinder:
                 pass
         self.page.on("response", on_response)
 
-    # -------- Discovery: Hashtag -> usernames --------
-    def discover_usernames_from_hashtag(self, hashtag: str, max_users: int = 50) -> list[str]:
+    def discover_usernames_from_hashtag(
+        self,
+        hashtag: str,
+        global_target: Optional[int],
+        existing_usernames: set,
+        collected_usernames: set,  # global (already collected this run, lowercased)
+    ) -> list[str]:
+        """
+        Phase 1: Discover unique usernames from hashtag tiles.
+        Processes all visible tiles, then scrolls by one viewport, until:
+        - the page height stops growing (end of feed), or
+        - the global target is reached.
+        Dedupes against Airtable usernames and the per-run global set.
+        """
         url = f"https://www.instagram.com/explore/tags/{hashtag.strip('#')}/"
-        logger.info(f"🔎 Discovering via hashtag: {hashtag} -> {url}")
+        logger.info(f"🔎 Phase 1 - #{hashtag}: {url}")
         self.page.goto(url, wait_until="domcontentloaded", timeout=PAGE_GOTO_TIMEOUT_MS)
         human_sleep(*self.base_delay)
 
-        usernames = set()
+        seen_post_hrefs: set[str] = set()
+        new_usernames: list[str] = []
 
-        # Scroll batches to load posts
-        for _ in range(10):
-            self.page.mouse.wheel(0, 1800)
-            human_sleep(1.0, 2.0)
-            tiles = self.page.locator('a[href^="/p/"]')
-            cnt = min(tiles.count(), 12)
-            for i in range(cnt):
+        TILE_SELECTOR = 'a[href^="/p/"], a[href^="/reel/"]'
+
+        def get_height() -> int:
+            try:
+                return self.page.evaluate(
+                    "Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) || 0"
+                )
+            except Exception:
+                return 0
+
+        def grab_tile_hrefs() -> list[str]:
+            try:
+                hrefs = self.page.eval_on_selector_all(
+                    TILE_SELECTOR,
+                    'els => els.map(e => e.getAttribute("href")).filter(Boolean)'
+                )
+                return [h.split("#")[0] for h in hrefs]  # normalize minor fragments
+            except Exception:
+                return []
+
+        prev_h = -1
+        stall_rounds = 0
+        STALL_ROUNDS_TO_STOP = 3
+
+        while True:
+            # 1) Collect all tile hrefs currently in DOM and filter out already processed ones
+            hrefs = grab_tile_hrefs()
+            to_visit = [h for h in hrefs if h not in seen_post_hrefs]
+            if to_visit:
+                logger.info(f"🧩 DOM tiles={len(hrefs)} | new={len(to_visit)} | seen={len(seen_post_hrefs)}")
+
+            # 2) Process each new (unseen) tile in the current viewport/DOM before scrolling further
+            for href in to_visit:
+                # stop early if we hit global target
+                if global_target and (len(collected_usernames) + len(new_usernames)) >= global_target:
+                    logger.info(f"🎯 Global target {global_target} hit.")
+                    return new_usernames
+
+                seen_post_hrefs.add(href)
+
                 try:
-                    tiles.nth(i).click()
-                    human_sleep(0.6, 1.2)
-                    # Owner handle usually appears in the post header modal
-                    handle_nodes = self.page.locator('header a[href^="/"][role="link"]')
-                    hc = min(handle_nodes.count(), 4)
-                    for j in range(hc):
-                        href = handle_nodes.nth(j).get_attribute("href") or ""
-                        if href.startswith("/") and "/p/" not in href and "/explore/" not in href:
-                            uname = href.strip("/").split("/")[0]
-                            if 2 <= len(uname) <= 30:
-                                usernames.add(uname)
-                    # Close modal
-                    try:
-                        self.page.locator('svg[aria-label="Close"], button:has-text("Close")').first.click(timeout=1500)
-                    except Exception:
-                        self.page.keyboard.press("Escape")
+                    # Click by exact href; Playwright will scroll it into view if needed
+                    self.page.locator(f'a[href="{href}"]').first.click(timeout=3000)
                 except Exception:
-                    pass
+                    # Sometimes virtualized DOM makes some anchors non-clickable—skip
+                    continue
 
-            if len(usernames) >= max_users:
-                break
+                human_sleep(0.7, 1.3)
 
-        logger.info(f"✅ Found {len(usernames)} usernames from #{hashtag}")
-        return list(usernames)[:max_users]
+                username = self._extract_username_from_post_modal()
+                if username:
+                    key = username.lower().strip()
+                    if key not in existing_usernames and key not in collected_usernames:
+                        collected_usernames.add(key)
+                        new_usernames.append(username)
+                        current = len(collected_usernames)
+                        target_str = f"/{global_target}" if global_target else ""
+                        logger.info(f"[PH1] collected {current}{target_str} -> @{username} from #{hashtag}")
+
+                self._close_post_modal()
+                human_sleep(0.3, 0.7)
+
+            # 3) Stop if target reached after processing current DOM
+            if global_target and len(collected_usernames) >= global_target:
+                logger.info(f"🎯 Global target {global_target} reached.")
+                return new_usernames
+
+            # 4) Scroll one viewport height to bring in new tiles
+            self.page.evaluate('window.scrollBy(0, Math.floor(window.innerHeight * 0.95));')
+            human_sleep(1.6, 2.8)
+
+            # 5) Detect end-of-feed via page height not increasing
+            new_h = get_height()
+            if new_h <= prev_h:
+                stall_rounds += 1
+                logger.info(f"⚠️ No page growth (stall {stall_rounds}/{STALL_ROUNDS_TO_STOP})")
+                if stall_rounds >= STALL_ROUNDS_TO_STOP:
+                    # last sweep for any late-bound tiles not yet clicked
+                    leftovers = [h for h in grab_tile_hrefs() if h not in seen_post_hrefs]
+                    if not leftovers:
+                        logger.info("🏁 End of feed (no new height and no leftover tiles).")
+                        return new_usernames
+                    # process those leftovers next loop
+                    stall_rounds = 0
+            else:
+                stall_rounds = 0
+                prev_h = new_h
+
+
+    def _extract_username_from_post_modal(self) -> Optional[str]:
+        """Extract username from the opened post modal"""
+        try:
+            # Wait for modal to load
+            self.page.wait_for_selector('div[role="dialog"], article[role="presentation"]', timeout=3000)
+            
+            # Look for username in various locations within the modal
+            username_selectors = [
+                'header a[href^="/"][role="link"]',  # Username link in post header
+                'header a[href^="/"]',  # Any link in header
+                'article header a',  # Link in article header
+                'div[role="dialog"] header a',  # Link in dialog header
+            ]
+            
+            for selector in username_selectors:
+                try:
+                    links = self.page.locator(selector)
+                    for i in range(min(links.count(), 3)):  # Check first 3 links
+                        href = links.nth(i).get_attribute("href") or ""
+                        if href.startswith("/") and "/p/" not in href and "/explore/" not in href and "/stories/" not in href:
+                            username = href.strip("/").split("/")[0]
+                            if 2 <= len(username) <= 30 and username != "www.instagram.com":
+                                return username
+                except Exception:
+                    continue
+                    
+        except Exception as e:
+            logger.debug(f"Error extracting username from modal: {e}")
+        
+        return None
+
+    def _close_post_modal(self):
+        """Close the post modal using various methods"""
+        try:
+            # Try clicking close button
+            close_selectors = [
+                'svg[aria-label="Close"]',
+                'button:has-text("Close")',
+                'div[role="dialog"] button',
+                'article button[aria-label="Close"]'
+            ]
+            
+            for selector in close_selectors:
+                try:
+                    if self.page.locator(selector).is_visible(timeout=1000):
+                        self.page.locator(selector).first.click()
+                        return
+                except Exception:
+                    continue
+            
+            # Fallback: press Escape key
+            self.page.keyboard.press("Escape")
+            
+        except Exception:
+            pass
 
     # -------- Profile scrape -> Profile model --------
-    def scrape_profile(self, username: str, seed_hashtag: str, country: Optional[str]) -> Optional[Profile]:
+    def scrape_profile(self, username: str, base_hashtag: str, country: Optional[str]) -> Optional[Profile]:
         url = f"https://www.instagram.com/{username.strip('/')}/"
         logger.info(f"👤 Scraping profile: {username} -> {url}")
         self.graphql_latest = {}
         self.page.goto(url, wait_until="domcontentloaded", timeout=PAGE_GOTO_TIMEOUT_MS)
         human_sleep(1.0, 2.0)
 
-        # Header-exact extraction (tuned to your DOM)
         hdr = _extract_counts_and_bio_from_header(self.page)
-
-        # Followers (required by your model defaults)
         followers = hdr.get("followers") or 0
         bio_text = hdr.get("bio") or None
         image_url = hdr.get("image_url")
 
-        # Average likes over a few recent posts (best-effort)
         avg_likes = _sample_average_likes(self.page, max_posts=4) or 0
 
         profile = Profile(
@@ -825,65 +947,145 @@ class IGInfluencerFinder:
             Likes=avg_likes,
             Profile_URL=url,
             Image_URL=image_url,
-            Hashtag=seed_hashtag,
+            Hashtag=base_hashtag,     # <-- store the BASE hashtag here
             Blacklist=False,
             Source="Instagram",
-            Country=country,
+            Country=(country.upper() if country else None),
         )
-        logger.info(
-            f"🧾 Profile: @{username} | followers={profile.Followers} | likes_avg={profile.Likes} | "
-            f"image={'yes' if profile.Image_URL else 'no'} | hashtag={seed_hashtag} | country={country}"
-            f"image_url={profile.Image_URL}"
-            f"profile_url={profile.Profile_URL}"
-            f"bio={profile.Bio}"
 
+        logger.info(
+            f"🧾 Profile: @{username} | followers={profile.Followers} | likes≈{profile.Likes} "
+            f"| hashtag={profile.Hashtag} | country={profile.Country}"
         )
         return profile
 
 
-# --- Runner: dedupe against Airtable + persist Profile objects ---
+# --- Runner: Two-Phase Scraping (Collect usernames first, then scrape profiles) ---
 
-def run_influencer_scrape(scraper: InstagramScraper,
-                          hashtags: list[tuple[str, Optional[str]]],
-                          max_per_tag: int = 40,
-                          max_profiles_total: int = 200):
+def extract_base_hashtag(country_hashtag: str) -> str:
+    """
+    Extract base hashtag from country-specific hashtag.
+    Handles formats: cryptousa, crypto_usa, crypto-in-usa, crypto-usa -> crypto
+    """
+    base_tag = country_hashtag.lower().strip('#')
+    
+    # List of countries used in generate_country_hashtags
+    countries = ["usa", "uk", "canada", "australia", "germany", "france", "italy",
+                "spain", "japan", "china", "india", "brazil", "mexico", "russia",
+                "southkorea", "uae", "saudiarabia", "turkey", "indonesia", "singapore"]
+    
+    # Try different patterns to extract base hashtag (order matters!)
+    for country in countries:
+        # Pattern 3: crypto-in-usa -> crypto (check this first as it's most specific)
+        if base_tag.endswith(f"-in-{country}"):
+            base_tag = base_tag[:-len(f"-in-{country}")]
+            break
+        # Pattern 2: crypto_usa -> crypto
+        elif base_tag.endswith(f"_{country}"):
+            base_tag = base_tag[:-len(f"_{country}")]
+            break
+        # Pattern 4: crypto-usa -> crypto
+        elif base_tag.endswith(f"-{country}"):
+            base_tag = base_tag[:-len(f"-{country}")]
+            break
+        # Pattern 1: cryptousa -> crypto (check this last as it's least specific)
+        elif base_tag.endswith(country):
+            base_tag = base_tag[:-len(country)]
+            break
+    
+    return base_tag
+
+def run_influencer_scrape(
+    scraper: InstagramScraper,
+    hashtags: list[tuple[str, Optional[str]]],
+    max_profiles_total: int = 200,
+    base_hashtag: str = BASE_HASHTAG,
+    existing_usernames: set = set(),
+):
     page = scraper.page
     finder = IGInfluencerFinder(page)
-    seen_local: set[str] = set()
-    total = 0
 
-    # Airtable dedupe (existing handles)
+    # existing from Airtable
     try:
-        existing = {u.lower() for u in (get_existing_usernames() or [])}
-    except Exception:
-        existing = set()
+        existing_usernames = {u.lower() for u in (existing_usernames or [])}
+        logger.info(f"📋 Existing usernames in Airtable: {len(existing_usernames)}")
+    except Exception as e:
+        logger.warning(f"⚠️ Could not fetch existing usernames: {e}")
+        existing_usernames = set()
+
+    # ===== PHASE 1 =====
+    logger.info("🚀 Phase 1: Collect usernames until end-of-feed or global target")
+    collected_global: set[str] = set()   # lowercased usernames (this run)
+    candidates: list[tuple[str, str, Optional[str]]] = []  # (username, country_tag, country)
 
     for tag, country in hashtags:
+        if len(collected_global) >= max_profiles_total:
+            logger.info("🎯 Global target already reached before starting next hashtag.")
+            break
+
+        remaining = max_profiles_total - len(collected_global)
+        logger.info(f"📱 Hashtag #{tag} (country={country}) — need {remaining} more")
+
+        new_names = finder.discover_usernames_from_hashtag(
+            hashtag=tag,
+            global_target=max_profiles_total,
+            existing_usernames=existing_usernames,
+            collected_usernames=collected_global,
+        )
+
+        # order-preserving add to candidates
+        for uname in new_names:
+            candidates.append((uname, tag, country))
+
+        logger.info(f"✅ #{tag}: +{len(new_names)} new (total={len(collected_global)}/{max_profiles_total})")
+        if len(collected_global) >= max_profiles_total:
+            logger.info("🎯 Reached global target during Phase 1.")
+            break
+
+    if not candidates:
+        logger.warning("⚠️ No candidates collected in Phase 1; exiting.")
+        return
+
+    candidates = candidates[:max_profiles_total]
+    logger.info(f"📊 Phase 1 complete: {len(candidates)} candidates queued for scraping")
+
+    # ===== PHASE 2 =====
+    logger.info("🔍 Phase 2: Scrape & save profiles one by one")
+    saved = 0
+    saved_this_run: set[str] = set()
+
+    for idx, (username, tag, country) in enumerate(candidates, start=1):
+        key = username.lower().strip()
+        if key in existing_usernames or key in saved_this_run:
+            logger.info(f"⏭️ Skip @{username} (already saved)")
+            continue
+
+        # derive base hashtag to save
+        tag_base = extract_base_hashtag(tag) or base_hashtag
+
+        logger.info(f"[PH2] {saved + 1}/{max_profiles_total} -> @{username} (#{tag} → save as #{tag_base})")
+        prof = finder.scrape_profile(username, base_hashtag=tag_base, country=country)
+        if not prof:
+            logger.warning(f"⚠️ Failed to scrape @{username}")
+            human_sleep(1.2, 2.4)
+            continue
+
         try:
-            candidates = finder.discover_usernames_from_hashtag(tag, max_users=max_per_tag)
-            for uname in candidates:
-                key = uname.lower().strip()
-                if key in seen_local or key in existing:
-                    continue
-                if total >= max_profiles_total:
-                    logger.info("🏁 Reached max_profiles_total")
-                    return
-
-                prof = finder.scrape_profile(uname, seed_hashtag=tag, country=country)
-                if prof:
-                    # Persist to Airtable as your Profile model
-                    try:
-                        save_profile_to_airtable(prof.model_dump())
-                        total += 1
-                        seen_local.add(key)
-                        existing.add(key)
-                    except Exception as e:
-                        logger.warning(f"⚠️ Airtable save failed for @{uname}: {e}")
-                human_sleep(1.0, 2.0)  # pacing between profiles
-
+            save_profile_to_airtable(prof.model_dump())
+            saved += 1
+            saved_this_run.add(key)
+            existing_usernames.add(key)  # keep the dedupe set hot
+            logger.info(f"✅ [PH2] saved {saved}/{max_profiles_total} -> @{username}")
         except Exception as e:
-            logger.warning(f"Hashtag {tag} failed: {e}")
-            human_sleep(6, 12)
+            logger.warning(f"⚠️ Airtable save failed for @{username}: {e}")
+
+        if saved >= max_profiles_total:
+            logger.info("🏁 Phase 2 target reached.")
+            break
+
+        human_sleep(1.5, 3.0)
+
+    logger.info(f"🎉 Done. Saved {saved}/{min(len(candidates), max_profiles_total)} profiles.")
 
 # -------------------------
 # Main Function
@@ -903,6 +1105,7 @@ def main():
     # Get credentials from environment variables
     username = os.getenv("INSTAGRAM_USERNAME", "jame.swong1954")
     password = os.getenv("INSTAGRAM_PASSWORD", "uzrbxenz9512")
+    existing_usernames = get_existing_usernames()
 
     if not username or not password:
         logger.error("❌ Please set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD environment variables")
@@ -916,7 +1119,7 @@ def main():
             if scraper.login(username, password):
                 logger.info("✅ Successfully logged into Instagram!")
                 hashtags = generate_country_hashtags("crypto")
-                run_influencer_scrape(scraper, hashtags=hashtags, max_per_tag=10, max_profiles_total=30)
+                run_influencer_scrape(scraper, hashtags=hashtags, max_profiles_total=30, base_hashtag=BASE_HASHTAG, existing_usernames=existing_usernames)
 
             else:
                 logger.error("❌ Failed to login to Instagram")
