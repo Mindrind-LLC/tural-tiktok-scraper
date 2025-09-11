@@ -23,42 +23,45 @@ CROWN_JOB_PROFILES_PER_HASHTAG = 500
 def run_crown_job():
     """
     Crown job that runs every 24 hours to scrape active hashtags sequentially
+    Now processes hashtags with country variations and minimum follower filters
     """
     logger.info("👑 Crown job triggered - starting scheduled scraping")
     
     try:
-        # Get active hashtags from Airtable
-        active_hashtags = get_active_hashtags()
+        # Get active hashtags with countries and minimum followers from Airtable
+        hashtags_data = get_active_hashtags()
         
-        if not active_hashtags:
+        if not hashtags_data:
             logger.warning("No active hashtags found in Airtable for crown job")
             return
         
-        logger.info(f"Found {len(active_hashtags)} active hashtags for crown job")
+        logger.info(f"Found {len(hashtags_data)} active hashtags for crown job")
         
-        # Process each hashtag sequentially
-        for i, hashtag in enumerate(active_hashtags, 1):
-            logger.info(f"👑 Processing hashtag {i}/{len(active_hashtags)}: {hashtag}")
+        # Process each hashtag tuple sequentially
+        for i, (base_hashtag, countries, min_followers) in enumerate(hashtags_data, 1):
+            logger.info(f"👑 Processing hashtag {i}/{len(hashtags_data)}: {base_hashtag}")
+            logger.info(f"   Countries: {countries}")
+            logger.info(f"   Min Followers: {min_followers}")
             
             try:
                 # Execute scraper directly
-                logger.info(f"Starting scraper for hashtag: {hashtag}")
-                scrape_tiktok_profiles(base_hashtag=hashtag, num_profiles=CROWN_JOB_PROFILES_PER_HASHTAG)
-                logger.info(f"✅ Successfully completed scraping for hashtag: {hashtag}")
+                logger.info(f"Starting scraper for hashtag: {base_hashtag}")
+                scrape_tiktok_profiles(base_hashtag=base_hashtag, num_profiles=CROWN_JOB_PROFILES_PER_HASHTAG, countries=countries, min_followers=min_followers)
+                logger.info(f"✅ Successfully completed scraping for hashtag: {base_hashtag}")
                 
             except Exception as e:
-                error_msg = f"Error scraping hashtag {hashtag}: {str(e)}"
+                error_msg = f"Error scraping hashtag {base_hashtag}: {str(e)}"
                 logger.error(f"❌ {error_msg}")
                 logger.error(f"Traceback: {traceback.format_exc()}")
                 # Continue with next hashtag instead of stopping
                 continue
             
             # Small delay between hashtags to avoid overwhelming the system
-            if i < len(active_hashtags):
+            if i < len(hashtags_data):
                 logger.info("⏳ Waiting 30 seconds before processing next hashtag...")
                 time.sleep(30)
         
-        logger.info(f"🎉 Crown job completed: {len(active_hashtags)} hashtags processed")
+        logger.info(f"🎉 Crown job completed: {len(hashtags_data)} hashtags processed")
         
     except Exception as e:
         logger.error(f"❌ Error in crown job: {e}")

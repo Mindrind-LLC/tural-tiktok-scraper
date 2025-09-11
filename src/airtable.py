@@ -53,28 +53,44 @@ def get_existing_usernames():
 
 def get_active_hashtags():
     """
-    Fetch all active hashtags from the hashtags table.
+    Fetch all active hashtags from the hashtags table with their associated countries and minimum followers.
     Only returns hashtags where Active field is True/checked.
     
     Returns:
-        list: List of active hashtag strings
+        list: List of tuples containing (hashtag, countries_list, minimum_followers)
     """
     try:
         # Fetch all records from hashtags table
         records = hashtags_table.all()
-        # Filter for only active hashtags
-        active_hashtags = []
+        # Filter for only active hashtags and extract additional fields
+        active_hashtags_data = []
         for record in records:
             fields = record["fields"]
-            hashtag = fields.get("Hashtag").lower()
+            hashtag = fields.get("Hashtag")
             is_active = fields.get("Active", False)
+            countries_str = fields.get("Countries", "")
+            minimum_followers = fields.get("Minimum_Followers", 0)
             
             # Only include hashtags that are active (True/checked)
             if hashtag and is_active:
-                active_hashtags.append(hashtag)
+                # Process countries string
+                countries_list = []
+                if countries_str:
+                    # Split by comma, strip whitespace, remove spaces, convert to lowercase
+                    countries_list = [
+                        country.strip().replace(" ", "").lower() 
+                        for country in countries_str.split(",") 
+                        if country.strip()
+                    ]
+                
+                # Convert hashtag to lowercase
+                hashtag_lower = hashtag.lower()
+                
+                # Add tuple to results
+                active_hashtags_data.append((hashtag_lower, countries_list, minimum_followers))
         
-        print(f"✅ Fetched {len(active_hashtags)} active hashtags from Airtable")
-        return active_hashtags
+        print(f"✅ Fetched {len(active_hashtags_data)} active hashtags with data from Airtable")
+        return active_hashtags_data
         
     except Exception as e:
         print(f"❌ Error fetching hashtags from Airtable: {e}")
@@ -96,7 +112,7 @@ if __name__ == "__main__":
 #     Country="USA"
 # )
 #     save_profile_to_airtable(profile.model_dump())
-    hashtags = get_active_hashtags()
-    print(f"✅ Fetched {len(hashtags)} active hashtags from Airtable")
-    for hashtag in hashtags:
-        print(hashtag)
+    hashtags_data = get_active_hashtags()
+    print(f"✅ Fetched {len(hashtags_data)} active hashtags with data from Airtable")
+    for hashtag, countries, min_followers in hashtags_data:
+        print(f"Hashtag: {hashtag}, Countries: {countries}, Min Followers: {min_followers}")
