@@ -36,13 +36,13 @@ def save_profile_to_airtable(profile_data: dict):
         print(f"❌ Error saving to Airtable: {e}")
         return None
     
-def get_existing_usernames():
+def get_existing_usernames(source: str):
     """
     Fetch all usernames from the Airtable table.
     Returns a Python list of usernames.
     """
     # Fetch all records
-    records = data_table.all()    
+    records = data_table.all(formula=f"{{Source}} = '{source}'")    
     # Extract Username field values
     usernames = []
     for record in records:
@@ -68,7 +68,7 @@ def get_active_hashtags():
             fields = record["fields"]
             hashtag = fields.get("Hashtag")
             is_active = fields.get("Active", False)
-            countries_str = fields.get("Countries", "")
+            countries_str = fields.get("Countries", ["usa", "uk", "canada", "australia", "germany", "france", "italy", "spain", "japan", "china", "india", "brazil", "mexico", "russia", "southkorea", "uae", "saudiarabia", "turkey", "indonesia", "singapore"])
             minimum_followers = fields.get("Minimum_Followers", 0)
             
             # Only include hashtags that are active (True/checked)
@@ -112,7 +112,12 @@ if __name__ == "__main__":
 #     Country="USA"
 # )
 #     save_profile_to_airtable(profile.model_dump())
-    hashtags_data = get_active_hashtags()
-    print(f"✅ Fetched {len(hashtags_data)} active hashtags with data from Airtable")
-    for hashtag, countries, min_followers in hashtags_data:
-        print(f"Hashtag: {hashtag}, Countries: {countries}, Min Followers: {min_followers}")
+    # hashtags_data = get_active_hashtags()
+    # print(f"✅ Fetched {len(hashtags_data)} active hashtags with data from Airtable")
+    # for hashtag, countries, min_followers in hashtags_data:
+    #     print(f"Hashtag: {hashtag}, Countries: {countries}, Min Followers: {min_followers}")
+
+    usernames = get_existing_usernames("Tiktok")
+    print(f"✅ Fetched {len(usernames)} usernames with data from Airtable")
+    # for username in usernames:
+    #     print(f"Username: {username}")
