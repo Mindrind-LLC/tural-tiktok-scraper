@@ -6,3 +6,4 @@ cli_logs.log
 *.pem
 server_command.txt
 *.log
+test_triggers.py
