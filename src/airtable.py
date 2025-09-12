@@ -69,7 +69,7 @@ def get_active_hashtags():
             hashtag = fields.get("Hashtag")
             is_active = fields.get("Active", False)
             countries_str = fields.get("Countries", ["usa", "uk", "canada", "australia", "germany", "france", "italy", "spain", "japan", "china", "india", "brazil", "mexico", "russia", "southkorea", "uae", "saudiarabia", "turkey", "indonesia", "singapore"])
-            minimum_followers = fields.get("Minimum_Followers", 0)
+            minimum_followers = fields.get("Minimum_Followers", 5000)
             
             # Only include hashtags that are active (True/checked)
             if hashtag and is_active:

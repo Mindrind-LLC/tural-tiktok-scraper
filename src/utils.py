@@ -190,10 +190,10 @@ def generate_country_hashtags(base_hashtag: str, countries: List[str]) -> List[T
         
         # Generate hashtags for each variation
         for country_var in country_variations:
-            out.append((f"{base_hashtag}{country_var}", country_var))
-            out.append((f"{base_hashtag}_{country_var}", country_var))
-            out.append((f"{base_hashtag}-in-{country_var}", country_var))
-            out.append((f"{base_hashtag}-{country_var}", country_var))
+            out.append((f"{base_hashtag}{country_var}", country))
+            out.append((f"{base_hashtag}_{country_var}", country))
+            out.append((f"{base_hashtag}-in-{country_var}", country))
+            out.append((f"{base_hashtag}-{country_var}", country))
     
     logger.info(f"Generated {len(out)} hashtag variations")
     return out
