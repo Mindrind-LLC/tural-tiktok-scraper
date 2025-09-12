@@ -1,10 +1,13 @@
-import time, logging
+import time, logging, os
 import traceback
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from dotenv import load_dotenv
 
 from src.airtable import get_active_hashtags
 from src.tikTok_Scraper import scrape_tiktok_profiles
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Crown Job Configuration
-CROWN_JOB_PROFILES_PER_HASHTAG = 500
+CROWN_JOB_PROFILES_PER_HASHTAG = int(os.getenv("CROWN_JOB_PROFILES_PER_HASHTAG", 500))
 
 def run_crown_job():
     """
@@ -62,7 +65,6 @@ def run_crown_job():
                 time.sleep(30)
         
         logger.info(f"🎉 Crown job completed: {len(hashtags_data)} hashtags processed")
-        
     except Exception as e:
         logger.error(f"❌ Error in crown job: {e}")
         logger.error(f"Crown job traceback: {traceback.format_exc()}")
@@ -119,11 +121,6 @@ if __name__ == "__main__":
 
 
     logger.info("🚀 Starting TikTok Scraper Crown Job System...")
-    logger.info("📁 Using simplified architecture:")
-    logger.info("   - main.py: Crown job scheduling (sequential processing)")
-    logger.info("   - tikTok_Scraper.py: Core scraping functionality")
-    logger.info("   - airtable.py: Airtable integration for hashtags and data")
-    logger.info("   - task_manager.py: Available for future API-based tasks")
     
     # 🧪 IMMEDIATE CROWN JOB TEST RUN
     logger.info("👑 Starting immediate Crown job test run...")

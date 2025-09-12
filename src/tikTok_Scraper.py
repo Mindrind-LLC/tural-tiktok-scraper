@@ -1,6 +1,6 @@
 # tiktok_scraper_playwright.py
 import os, re, time, random, logging
-from typing import Set, Tuple, Optional, List, Dict, Any
+from typing import Set, Tuple, Optional, List, Dict
 
 from playwright.sync_api import sync_playwright
 
@@ -232,6 +232,7 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_f
     try:
         bio_text = page.locator('h2[data-e2e="user-bio"]').first.text_content(timeout=SEL_TIMEOUT_MS)
         bio = (bio_text or "").strip()
+        logger.info(f"Bio: {bio}")
     except Exception:
         pass
 
@@ -239,6 +240,7 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_f
     try:
         followers_text = page.locator('strong[data-e2e="followers-count"]').first.text_content(timeout=SEL_TIMEOUT_MS)
         followers = (followers_text or "").strip()
+        logger.info(f"Followers: {followers}")
     except Exception:
         pass
 
@@ -246,6 +248,7 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_f
     try:
         likes_text = page.locator('strong[data-e2e="likes-count"]').first.text_content(timeout=SEL_TIMEOUT_MS)
         likes = (likes_text or "").strip()
+        logger.info(f"Likes: {likes}")
     except Exception:
         pass
 
@@ -271,13 +274,23 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_f
         Hashtag=base_hashtag.lower()
     ).model_dump()
 
-    if  follower_count >= min_followers and username not in existing_usernames:
-        # Save
-        logger.info(f"💾 Saving profile {username} to Airtable...")
-        if not save_profile_to_airtable(profile_data):
-            raise RuntimeError("airtable_save_failed")
-
-    logger.info(f"✅ Profile {username} saved successfully")
+    # Always add username to set to avoid re-processing
+    if username not in existing_usernames:
+        existing_usernames.add(username)
+        
+        # Only save to Airtable if meets criteria
+        if follower_count >= min_followers:
+            logger.info(f"💾 Saving profile {username} to Airtable...")
+            if not save_profile_to_airtable(profile_data):
+                # If save failed, remove from set to allow retry
+                existing_usernames.discard(username)
+                raise RuntimeError("airtable_save_failed")
+            
+            logger.info(f"✅ Profile {username} saved successfully")
+        else:
+            logger.info(f"⏭️ Skipping {username}: {follower_count} followers < {min_followers} minimum")
+    else:
+        logger.info(f"⏭️ Skipping existing username: {username}")
     return profile_data
 
 def scrape_single_profile_with_retry(ctx_maker, page, url: str, country: str, base_hashtag: str,
