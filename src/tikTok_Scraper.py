@@ -1,10 +1,11 @@
 # tiktok_scraper_playwright.py
 import os, re, time, random, logging
-from typing import Tuple, Optional, List, Dict
+from typing import Set, Tuple, Optional, List, Dict
 
 from playwright.sync_api import sync_playwright
 
 from dotenv import load_dotenv
+from pydantic import functional_serializers
 from src.schemas import Profile
 from src.utils import parse_count
 from src.airtable import save_profile_to_airtable, get_existing_usernames
@@ -24,6 +25,7 @@ SCROLL_PAUSE = (2, 4)
 PAGE_GOTO_TIMEOUT_MS = 60_000     # 60s
 SEL_TIMEOUT_MS       = 12_000     # 12s for element queries
 RETRY_SLEEP_SEC      = 5
+HEADLESS = True
 
 
 def extract_username_from_url(url: str) -> Optional[str]:
@@ -47,7 +49,7 @@ def make_browser_context():
     browser = None
     try:
         browser = p.chromium.launch(
-            headless=True,                 # flip False for local debug
+            headless=functional_serializers,                 # flip False for local debug
             channel="chrome",              # use system Chrome if available
             proxy=proxy_cfg,               # <-- proxy MUST be set here
             args=[
@@ -62,7 +64,7 @@ def make_browser_context():
     except Exception as e:
         logger.warning(f"Chrome channel not available: {e}")
         browser = p.chromium.launch(
-            headless=True,
+            headless=HEADLESS,
             proxy=proxy_cfg,               # <-- still at launch
             args=[
                 "--disable-blink-features=AutomationControlled",
@@ -102,15 +104,6 @@ def make_browser_context():
 
     page = context.new_page()
 
-    # Verify proxy/IP once (does not affect scraper page)
-    try:
-        test = context.new_page()
-        test.goto("https://httpbin.org/ip", wait_until="domcontentloaded", timeout=20_000)
-        ip_text = test.text_content("pre") or test.text_content("body")
-        logger.info("[Proxy check] httpbin response: %s", (ip_text or "").strip())
-        test.close()
-    except Exception as e:
-        logger.warning(f"[Proxy check] Could not verify IP: {e}")
 
     logger.info("✅ Playwright ready (proxy=%s)", proxy_env or "NONE")
     return p, browser, context, page
@@ -157,7 +150,7 @@ def wait_for_any_video_card(page, timeout_ms=8000) -> bool:
     return False
 
 def get_unique_profiles_via_videos(page, hashtag: str, num_profiles: int,
-                                   profile_urls: List[Dict[str, str]], country: str):
+                                   profile_urls: List[Dict[str, str]], country: str, existing_usernames ):
     logger.info(f"🎬 Collecting profiles for #{hashtag} (Country: {country})")
     hashtag_url = f"https://www.tiktok.com/tag/{hashtag}"
     safe_goto(page, hashtag_url)
@@ -226,7 +219,7 @@ def get_unique_profiles_via_videos(page, hashtag: str, num_profiles: int,
 # -------------------------
 # Phase 2: Scrape a profile (with retry)
 # -------------------------
-def scrape_single_profile(page, url: str, country: str, base_hashtag: str) -> Dict:
+def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_followers: int = 0, existing_usernames: Set[str] = set()) -> Dict:
     safe_goto(page, url)
     maybe_accept_cookies(page)
 
@@ -241,6 +234,7 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str) -> Di
     try:
         bio_text = page.locator('h2[data-e2e="user-bio"]').first.text_content(timeout=SEL_TIMEOUT_MS)
         bio = (bio_text or "").strip()
+        logger.info(f"Bio: {bio}")
     except Exception:
         pass
 
@@ -248,6 +242,7 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str) -> Di
     try:
         followers_text = page.locator('strong[data-e2e="followers-count"]').first.text_content(timeout=SEL_TIMEOUT_MS)
         followers = (followers_text or "").strip()
+        logger.info(f"Followers: {followers}")
     except Exception:
         pass
 
@@ -255,6 +250,7 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str) -> Di
     try:
         likes_text = page.locator('strong[data-e2e="likes-count"]').first.text_content(timeout=SEL_TIMEOUT_MS)
         likes = (likes_text or "").strip()
+        logger.info(f"Likes: {likes}")
     except Exception:
         pass
 
@@ -264,32 +260,48 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str) -> Di
     except Exception:
         pass
 
+    # Parse follower count for filtering
+    follower_count = parse_count(followers)
+    
+    # Check minimum followers filter
+
     profile_data = Profile(
         Username=username,
         Bio=bio,
-        Followers=parse_count(followers),
+        Followers=follower_count,
         Likes=parse_count(likes),
         Profile_URL=url,
         Image_URL=image_url,
-        Country=country.upper(),
+        Country=country.lower(),
         Hashtag=base_hashtag.lower()
-    ).dict()
+    ).model_dump()
 
-    # Save
-    logger.info(f"💾 Saving profile {username} to Airtable...")
-    if not save_profile_to_airtable(profile_data):
-        raise RuntimeError("airtable_save_failed")
-
-    logger.info(f"✅ Profile {username} saved successfully")
+    # Always add username to set to avoid re-processing
+    if username not in existing_usernames:
+        existing_usernames.add(username)
+        
+        # Only save to Airtable if meets criteria
+        if follower_count >= min_followers:
+            logger.info(f"💾 Saving profile {username} to Airtable...")
+            if not save_profile_to_airtable(profile_data):
+                # If save failed, remove from set to allow retry
+                existing_usernames.discard(username)
+                raise RuntimeError("airtable_save_failed")
+            
+            logger.info(f"✅ Profile {username} saved successfully")
+        else:
+            logger.info(f"⏭️ Skipping {username}: {follower_count} followers < {min_followers} minimum")
+    else:
+        logger.info(f"⏭️ Skipping existing username: {username}")
     return profile_data
 
 def scrape_single_profile_with_retry(ctx_maker, page, url: str, country: str, base_hashtag: str,
-                                     max_retries: int = 3) -> Tuple[Optional[Dict], str, object]:
+                                     min_followers: int = 0, max_retries: int = 2, existing_usernames: Set[str] = None) -> Tuple[Optional[Dict], str, object]:
     current_page = page
     for attempt in range(1, max_retries + 1):
         try:
             logger.info(f"Attempting to scrape profile (attempt {attempt}/{max_retries}): {url}")
-            data = scrape_single_profile(current_page, url, country, base_hashtag)
+            data = scrape_single_profile(current_page, url, country, base_hashtag, min_followers, existing_usernames)
             return data, "success", current_page
 
         except Exception as e:
@@ -324,17 +336,17 @@ def scrape_single_profile_with_retry(ctx_maker, page, url: str, country: str, ba
 # -------------------------
 # Orchestration
 # -------------------------
-def scrape_tiktok_profiles(base_hashtag: str = BASE_HASHTAG, num_profiles: int = NUM_PROFILES):
+def scrape_tiktok_profiles(base_hashtag: str = BASE_HASHTAG, num_profiles: int = NUM_PROFILES, min_followers: int = 0, countries: List[str] = None):
     start_time = time.time()
     logger.info(f"🚀 Starting TikTok profile scraping for hashtag: {base_hashtag}")
     logger.info(f"Target profiles: {num_profiles}")
-
+    
     p = browser = context = page = None
 
     def build_context(rebuild_only: bool = False):
         nonlocal p, browser, context, page
         if rebuild_only:
-            # rebuild only context/page; keep browser (proxy is set at launch)
+            # rebuild only context/page; keep browser
             try:
                 if page: page.close()
             except Exception:
@@ -368,7 +380,7 @@ def scrape_tiktok_profiles(base_hashtag: str = BASE_HASHTAG, num_profiles: int =
 
     all_profiles: List[Dict[str, str]] = []
     scraped_profiles: List[Dict] = []
-
+    existing_usernames = set(get_existing_usernames(source="Tiktok"))
     skipped_count = 0
     error_count = 0
     connection_error_count = 0
@@ -378,11 +390,11 @@ def scrape_tiktok_profiles(base_hashtag: str = BASE_HASHTAG, num_profiles: int =
 
         # Phase 1: discover profile URLs
         logger.info("📥 Phase 1: Collecting profile URLs…")
-        for hashtag, country in generate_country_hashtags(base_hashtag):
+        for hashtag, country in generate_country_hashtags(base_hashtag, countries):
             if len(all_profiles) >= num_profiles:
                 logger.info("Reached target profile count, stopping collection")
                 break
-            get_unique_profiles_via_videos(page, hashtag, num_profiles, all_profiles, country)
+            get_unique_profiles_via_videos(page, hashtag, num_profiles, all_profiles, country, existing_usernames)
 
         logger.info(f"✅ Phase 1 completed: {len(all_profiles)} profiles collected")
 
@@ -400,7 +412,9 @@ def scrape_tiktok_profiles(base_hashtag: str = BASE_HASHTAG, num_profiles: int =
                 url=url,
                 country=country,
                 base_hashtag=base_hashtag,
-                max_retries=3,
+                min_followers=min_followers,
+                max_retries=1,
+                existing_usernames=existing_usernames
             )
 
             if result:
