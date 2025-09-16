@@ -10,3 +10,4 @@ uvicorn
 APScheduler
 playwright
 pydantic
+pytz

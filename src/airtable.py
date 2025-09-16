@@ -18,23 +18,31 @@ print("Connected to Hashtags Table:", hashtags_table.name)
 
 def save_profile_to_airtable(profile_data: dict):
     """
-    Save a scraped profile to Airtable.
-    
-    profile_data: {
-        "Name": str,
-        "Username": str,
-        "Followers": int,
-        "Profile URL": str,
-        ...
-    }
+    Upsert (create or update) a single profile using batch_upsert.
+    Merges on Username + Source.
+    Returns the created/updated record dict (first item of response).
     """
     try:
-        record = data_table.create(profile_data)
-        print(f"✅ Saved to Airtable: {profile_data['Username']}")
+        # Ensure merge keys exist
+        if "Username" not in profile_data:
+            raise ValueError("profile_data missing 'Username'")
+        if "Source" not in profile_data:
+            profile_data["Source"] = "Tiktok"  # default
+
+        # batch_upsert accepts a list of {"fields": {...}} payloads
+        resp = data_table.batch_upsert(
+            records=[{"fields": profile_data}],
+            key_fields=["Username", "Source"],   # <— merge keys
+            typecast=True                        # optional
+        )
+        # pyairtable returns a list of upsert results; take the first
+        record = resp[0] if isinstance(resp, list) and resp else resp
+        print(f"✅ Upserted to Airtable: {profile_data['Username']}")
         return record
     except Exception as e:
-        print(f"❌ Error saving to Airtable: {e}")
+        print(f"❌ Error upserting to Airtable: {e}")
         return None
+
     
 def get_existing_usernames(source: str):
     """
