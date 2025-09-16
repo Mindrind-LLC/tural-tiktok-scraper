@@ -60,20 +60,33 @@ def human_sleep(min_s: float, max_s: float):
     time.sleep(random.uniform(min_s, max_s))
 
 def parse_proxy_env(env_val: str) -> Optional[dict]:
+    """Convert loose proxy strings into a Playwright proxy config.
+
+    Supported inputs:
+      - ``user:pass@host:port``
+      - ``host:port``
+      - Either of the above prefixed with ``http://`` or ``https://``.
     """
-    Accepts:
-      - user:pass@host:port
-      - host:port
-    Returns Playwright 'proxy' dict or None.
-    """
+
     if not env_val:
         return None
+
     env_val = env_val.strip()
+    scheme = "http://"
+
+    # Allow callers to pass a full URL and keep the scheme if provided.
+    if env_val.lower().startswith("http://"):
+        env_val = env_val[7:]
+    elif env_val.lower().startswith("https://"):
+        scheme = "https://"
+        env_val = env_val[8:]
+
     if "@" in env_val:
         creds, hostport = env_val.split("@", 1)
         user, pwd = creds.split(":", 1)
-        return {"server": "http://" + hostport, "username": user, "password": pwd}
-    return {"server": "http://" + env_val}
+        return {"server": scheme + hostport, "username": user, "password": pwd}
+
+    return {"server": scheme + env_val}
 
 # Country mapping for dynamic expansion
 COUNTRY_MAPPING = {

@@ -10,9 +10,9 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
 from dotenv import load_dotenv
-from utils import human_sleep, generate_country_hashtags, parse_proxy_env, parse_count
-from schemas import Profile
-from airtable import save_profile_to_airtable, get_existing_usernames
+from src.utils import human_sleep, generate_country_hashtags, parse_proxy_env, parse_count
+from src.schemas import Profile
+from src.airtable import save_profile_to_airtable, get_existing_usernames
 
 load_dotenv()
 
@@ -108,15 +108,22 @@ def load_cookies_from_file(username: str, cookies_dir: str = "cookies") -> Optio
 # -------------------------
 # Browser Setup
 # -------------------------
-def create_browser_context() -> tuple:
+def create_browser_context(
+    *,
+    proxy_url: Optional[str] = None,
+    user_agent: Optional[str] = None,
+    locale: Optional[str] = None,
+    timezone: Optional[str] = None,
+) -> tuple:
     """
     Create and configure Playwright browser context with stealth features.
 
     Returns:
         tuple: (playwright, browser, context, page)
     """
-    # proxy_env = os.getenv("PROXY", "").strip()
-    # proxy_cfg = parse_proxy_env(proxy_env)
+    # Allow direct overrides while keeping environment fallbacks for legacy flows.
+    proxy_value = proxy_url if proxy_url is not None else os.getenv("PROXY", "").strip()
+    proxy_cfg = parse_proxy_env(proxy_value)
 
     p = sync_playwright().start()
 
@@ -126,8 +133,9 @@ def create_browser_context() -> tuple:
         browser = p.chromium.launch(
             headless=False,  # Set to True for production
             channel="chrome",  # Use system Chrome if available
-            # proxy=proxy_cfg,
+            proxy=proxy_cfg,
             args=[
+                "--incognito",
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
                 "--disable-notifications",
@@ -146,8 +154,9 @@ def create_browser_context() -> tuple:
         logger.warning(f"Chrome channel not available: {e}")
         browser = p.chromium.launch(
             headless=False,
-            # proxy=proxy_cfg,
+            proxy=proxy_cfg,
             args=[
+                "--incognito",
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
                 "--disable-notifications",
@@ -167,11 +176,14 @@ def create_browser_context() -> tuple:
     context = browser.new_context(
         viewport={"width": 1366, "height": 768},  # Common resolution
         user_agent=(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            user_agent
+            or os.getenv(
+                "USER_AGENT",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            )
         ),
-        locale="en-US",
-        timezone_id="America/New_York",
+        locale=locale or os.getenv("LOCALE", "en-US"),
+        timezone_id=timezone or os.getenv("TIMEZONE", "America/New_York"),
         extra_http_headers={
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
@@ -309,8 +321,9 @@ def perform_login(page: Page, username: str, password: str) -> bool:
         # Click login button
         login_button = page.locator('button[type="submit"]')
         login_button.click()
-
-        input("Press Enter to continue...")
+        # Allow automation mode to bypass manual pause
+        if os.getenv("IG_SKIP_PROMPT", "0") != "1":
+            input("Press Enter to continue...")
 
         logger.info("✅ Login form submitted")
 
@@ -401,8 +414,21 @@ def verify_login_success(page: Page) -> bool:
 class InstagramScraper:
     """Instagram scraper with login and cookie management"""
 
-    def __init__(self, cookies_dir: str = "cookies"):
+    def __init__(
+        self,
+        cookies_dir: str = "cookies",
+        *,
+        proxy: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        locale: Optional[str] = None,
+        timezone: Optional[str] = None,
+    ):
         self.cookies_dir = cookies_dir
+        self.proxy = proxy
+        self.user_agent = user_agent
+        self.locale = locale
+        self.timezone = timezone
+
         self.playwright = None
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
@@ -410,7 +436,12 @@ class InstagramScraper:
 
     def __enter__(self):
         """Context manager entry"""
-        self.playwright, self.browser, self.context, self.page = create_browser_context()
+        self.playwright, self.browser, self.context, self.page = create_browser_context(
+            proxy_url=self.proxy,
+            user_agent=self.user_agent,
+            locale=self.locale,
+            timezone=self.timezone,
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -437,6 +468,39 @@ class InstagramScraper:
         if self.playwright:
             self.playwright.stop()
         logger.info("✅ Browser resources cleaned up")
+
+    @classmethod
+    def login_with_credentials(
+        cls,
+        username: str,
+        password: str,
+        *,
+        proxy: Optional[str] = None,
+        cookies_dir: str = "cookies",
+        user_agent: Optional[str] = None,
+        locale: Optional[str] = None,
+        timezone: Optional[str] = None,
+        use_saved_cookies: bool = True,
+    ) -> bool:
+        """Convenience helper to login with per-call proxy overrides.
+
+        Creates a temporary :class:`InstagramScraper` instance configured with the
+        provided proxy/user agent hints, attempts to reuse existing cookies for the
+        username, and falls back to a fresh login on failure.
+        """
+
+        with cls(
+            cookies_dir=cookies_dir,
+            proxy=proxy,
+            user_agent=user_agent,
+            locale=locale,
+            timezone=timezone,
+        ) as scraper:
+            return scraper.login(
+                username,
+                password,
+                use_saved_cookies=use_saved_cookies,
+            )
 
     def login(self, username: str, password: str, use_saved_cookies: bool = True) -> bool:
         """
