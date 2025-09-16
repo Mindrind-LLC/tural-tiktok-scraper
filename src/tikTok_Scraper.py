@@ -1,11 +1,11 @@
 # tiktok_scraper_playwright.py
-import os, re, time, random, logging
-from typing import Set, Tuple, Optional, List, Dict
+import os, re, time, random, logging, json
+from typing import Set, Tuple, Optional, List, Dict, Any
 
 from playwright.sync_api import sync_playwright
 
 from dotenv import load_dotenv
-from pydantic import functional_serializers
+from pydantic import functional_serializers  # not used for headless; kept to match your imports
 from src.schemas import Profile
 from src.utils import parse_count
 from src.airtable import save_profile_to_airtable, get_existing_usernames
@@ -32,6 +32,82 @@ def extract_username_from_url(url: str) -> Optional[str]:
     m = re.search(r"tiktok\.com/@([\w.\-]+)", url)
     return m.group(1) if m else None
 
+
+# -------------------------
+# JSON state extraction (works without images)
+# -------------------------
+UID_RE = re.compile(r"^[A-Za-z0-9._\-]{2,}$")
+
+def _walk_collect_uids(obj: Any, out: Set[str]) -> None:
+    """Recursively collect plausible uniqueIds from any nested dict/list."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            # Primary TikTok user keys we care about
+            if k in ("uniqueId", "author", "authorUniqueId"):
+                if isinstance(v, str) and UID_RE.match(v):
+                    out.add(v)
+            _walk_collect_uids(v, out)
+    elif isinstance(obj, list):
+        for it in obj:
+            _walk_collect_uids(it, out)
+
+def extract_usernames_from_embedded_state(page) -> List[str]:
+    """
+    Pull usernames from <script id="SIGI_STATE"> or <script id="__NEXT_DATA__">.
+    Returns a list of uniqueIds (usernames) without @ prefix.
+    """
+    try:
+        state = page.evaluate("""
+            () => {
+              const res = {};
+              const sigi = document.querySelector('script#SIGI_STATE');
+              if (sigi && sigi.textContent) res.sigi = sigi.textContent;
+              const next = document.querySelector('script#__NEXT_DATA__');
+              if (next && next.textContent) res.next = next.textContent;
+              return res;
+            }
+        """)
+    except Exception:
+        return []
+
+    usernames: Set[str] = set()
+
+    # Try SIGI_STATE first (most common on tag pages)
+    if state and isinstance(state, dict):
+        if "sigi" in state and state["sigi"]:
+            try:
+                sigi_json = json.loads(state["sigi"])
+                # Common structures: ItemModule (items keyed by id) and UserModule
+                if isinstance(sigi_json, dict):
+                    # Look in known places quickly
+                    item_mod = sigi_json.get("ItemModule") or {}
+                    if isinstance(item_mod, dict):
+                        for it in item_mod.values():
+                            if isinstance(it, dict):
+                                au = it.get("author")
+                                if isinstance(au, str) and UID_RE.match(au):
+                                    usernames.add(au)
+                    user_mod = sigi_json.get("UserModule") or {}
+                    users_map = user_mod.get("users") or {}
+                    if isinstance(users_map, dict):
+                        usernames.update([u for u in users_map.keys() if UID_RE.match(u)])
+                    # Deep walk as a catch-all
+                    _walk_collect_uids(sigi_json, usernames)
+            except Exception:
+                pass
+
+        # Fallback: Next.js data shape
+        if "next" in state and state["next"]:
+            try:
+                next_json = json.loads(state["next"])
+                # Common: props.pageProps.* lists. Authors often under itemList -> itemInfos.author
+                _walk_collect_uids(next_json, usernames)
+            except Exception:
+                pass
+
+    return list(usernames)
+
+
 # -------------------------
 # Playwright bootstrap
 # -------------------------
@@ -49,9 +125,9 @@ def make_browser_context():
     browser = None
     try:
         browser = p.chromium.launch(
-            headless=functional_serializers,                 # flip False for local debug
-            channel="chrome",              # use system Chrome if available
-            proxy=proxy_cfg,               # <-- proxy MUST be set here
+            headless=HEADLESS,                 # pass a boolean
+            channel="chrome",                  # use system Chrome if available
+            proxy=proxy_cfg,                 # <-- enable if you want proxy here
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
@@ -64,8 +140,8 @@ def make_browser_context():
     except Exception as e:
         logger.warning(f"Chrome channel not available: {e}")
         browser = p.chromium.launch(
-            headless=HEADLESS,
-            proxy=proxy_cfg,               # <-- still at launch
+            headless=HEADLESS,                 # pass a boolean
+            proxy=proxy_cfg,                # <-- enable if you want proxy here
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
@@ -91,12 +167,47 @@ def make_browser_context():
     context.add_init_script("""
         Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
         window.chrome = window.chrome || { runtime: {} };
+        // Pause autoplay; we block media anyway
+        const stopAutoplay = () => {
+          try { for (const v of document.querySelectorAll('video')) { v.pause?.(); v.autoplay=false; v.preload='none'; } } catch(e){}
+        };
+        document.addEventListener('DOMContentLoaded', stopAutoplay, { once: true });
     """)
 
-    # Block heavy resources (keep images — TikTok may rely on them for layout)
-    context.route("**/*", lambda route: route.abort()
-                  if route.request.resource_type in {"media", "font"}
-                  else route.continue_())
+    # --- Block heavy resources: images, videos, gifs, fonts (keep HTML/CSS/JS/XHR/Fetch) ---
+    VIDEO_EXTS = (".mp4", ".m4s", ".webm", ".m3u8", ".ts", ".mov", ".avi", ".flv", ".ogg", ".ogv")
+    IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".tiff", ".svg")
+
+    def should_abort(req):
+        url = req.url.lower()
+        rtype = req.resource_type
+
+        # Always allow the core page + data calls so DOM can build
+        if rtype in {"document", "script", "stylesheet", "xhr", "fetch"}:
+            # but if a script/style URL is actually a media file, still block by extension
+            if url.endswith(VIDEO_EXTS) or url.endswith(".gif"):
+                return True
+            return False
+
+        # Block all standard images (covers GIFs as images too)
+        if rtype == "image":
+            return True
+
+        # Block media (covers audio/video streams)
+        if rtype == "media":
+            return True
+
+        # Block fonts to trim a bit more (optional)
+        if rtype == "font":
+            return True
+
+        # Extra safety: block by extension if something slips through as 'other'
+        if url.endswith(VIDEO_EXTS) or url.endswith(".gif") or url.endswith(IMAGE_EXTS):
+            return True
+
+        return False
+
+    context.route("**/*", lambda route: route.abort() if should_abort(route.request) else route.continue_())
 
     # Default timeouts
     context.set_default_timeout(SEL_TIMEOUT_MS)
@@ -104,14 +215,15 @@ def make_browser_context():
 
     page = context.new_page()
 
-
     logger.info("✅ Playwright ready (proxy=%s)", proxy_env or "NONE")
     return p, browser, context, page
+
 
 def safe_goto(page, url: str, timeout_ms: int = PAGE_GOTO_TIMEOUT_MS):
     page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
     # let dynamic modules load briefly
-    page.wait_for_timeout(random.randint(2500, 4000))
+    page.wait_for_timeout(random.randint(1500, 2500))  # slightly shorter to keep things snappy
+
 
 def maybe_accept_cookies(page):
     """Dismiss common consent banners if present."""
@@ -130,6 +242,7 @@ def maybe_accept_cookies(page):
     except Exception:
         pass
 
+
 # -------------------------
 # Phase 1: Collect profile URLs
 # -------------------------
@@ -141,11 +254,22 @@ VIDEO_LINK_SELECTORS = [
 ]
 
 def wait_for_any_video_card(page, timeout_ms=8000) -> bool:
+    """Also treat presence of embedded state as 'content exists'."""
     deadline = time.time() + (timeout_ms / 1000.0)
     while time.time() < deadline:
-        for sel in VIDEO_LINK_SELECTORS:
-            if page.locator(sel).count():
+        try:
+            # If the JSON state is present, we can extract users even if no anchors rendered
+            has_state = page.evaluate("""() => !!(document.querySelector('#SIGI_STATE') || document.querySelector('#__NEXT_DATA__'))""")
+            if has_state:
                 return True
+        except Exception:
+            pass
+        for sel in VIDEO_LINK_SELECTORS:
+            try:
+                if page.locator(sel).count():
+                    return True
+            except Exception:
+                pass
         page.wait_for_timeout(300)
     return False
 
@@ -155,16 +279,35 @@ def get_unique_profiles_via_videos(page, hashtag: str, num_profiles: int,
     hashtag_url = f"https://www.tiktok.com/tag/{hashtag}"
     safe_goto(page, hashtag_url)
     maybe_accept_cookies(page)
-    human_sleep(2, 3)
+    human_sleep(1.2, 1.8)
 
-    # Give the feed a moment to populate at least one card
+    # 1) Try zero-image strategy: parse embedded state for authors
+    usernames = extract_usernames_from_embedded_state(page)
+    logger.info(f"State-extracted usernames for #{hashtag}: {len(usernames)}")
+
+    added = 0
+    for uid in usernames:
+        if len(profile_urls) >= num_profiles:
+            break
+        if not uid or uid in existing_usernames:
+            continue
+        profile_url = f"https://www.tiktok.com/@{uid}"
+        if any(p["profile_link"] == profile_url for p in profile_urls):
+            continue
+        profile_urls.append({"profile_link": profile_url, "country": country})
+        added += 1
+
+    if added >= num_profiles:
+        logger.info(f"✅ Reached target via state extraction ({added} added)")
+        return
+
+    # 2) Fallback to anchor-based discovery (if DOM renders anchors)
     if not wait_for_any_video_card(page, timeout_ms=10_000):
         logger.warning(f"No video cards detected quickly for #{hashtag}. "
                        f"Content may be geo/age gated or proxy not effective. Will still try scrolling…")
 
     existing_usernames = set(get_existing_usernames(source="TikTok"))
     logger.info(f"Found {len(existing_usernames)} existing usernames in database")
-
     seen_video_hrefs = set()
     last_height = page.evaluate("() => document.body.scrollHeight")
     scroll_count = 0
@@ -198,8 +341,6 @@ def get_unique_profiles_via_videos(page, hashtag: str, num_profiles: int,
                 continue
 
             profile_urls.append({"profile_link": profile_url, "country": country})
-            logger.debug(f"Collected profile: {profile_url} ({len(profile_urls)}/{num_profiles})")
-
             if len(profile_urls) >= num_profiles:
                 logger.info(f"✅ Reached target of {num_profiles} profiles for #{hashtag}")
                 return
@@ -215,6 +356,7 @@ def get_unique_profiles_via_videos(page, hashtag: str, num_profiles: int,
         last_height = new_height
 
     logger.info(f"📊 Profile collection for #{hashtag} done: {len(profile_urls)} total so far")
+
 
 # -------------------------
 # Phase 2: Scrape a profile (with retry)
@@ -254,17 +396,14 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_f
     except Exception:
         pass
 
-    # Avatar
+    # Avatar (we block actual image loads; just read the src attribute)
     try:
         image_url = page.locator('div[data-e2e="user-avatar"] img').first.get_attribute("src", timeout=SEL_TIMEOUT_MS) or ""
     except Exception:
         pass
 
-    # Parse follower count for filtering
     follower_count = parse_count(followers)
     
-    # Check minimum followers filter
-
     profile_data = Profile(
         Username=username,
         Bio=bio,
@@ -276,24 +415,22 @@ def scrape_single_profile(page, url: str, country: str, base_hashtag: str, min_f
         Hashtag=base_hashtag.lower()
     ).model_dump()
 
-    # Always add username to set to avoid re-processing
     if username not in existing_usernames:
         existing_usernames.add(username)
-        
-        # Only save to Airtable if meets criteria
-        if follower_count >= min_followers:
-            logger.info(f"💾 Saving profile {username} to Airtable...")
-            if not save_profile_to_airtable(profile_data):
-                # If save failed, remove from set to allow retry
-                existing_usernames.discard(username)
-                raise RuntimeError("airtable_save_failed")
-            
-            logger.info(f"✅ Profile {username} saved successfully")
-        else:
-            logger.info(f"⏭️ Skipping {username}: {follower_count} followers < {min_followers} minimum")
+        logger.info(f"💾 New profile for {username} upserted...")
     else:
-        logger.info(f"⏭️ Skipping existing username: {username}")
+        logger.info(f"⏭️ Upserting existing username: {username}")
+
+    if follower_count >= min_followers:
+        logger.info(f"💾 Saving profile {username} to Airtable...")
+        if not save_profile_to_airtable(profile_data):
+            existing_usernames.discard(username)
+            raise RuntimeError("airtable_save_failed")
+        logger.info(f"✅ Profile {username} saved successfully")
+    else:
+        logger.info(f"⏭️ Skipping {username}: {follower_count} followers < {min_followers} minimum")
     return profile_data
+
 
 def scrape_single_profile_with_retry(ctx_maker, page, url: str, country: str, base_hashtag: str,
                                      min_followers: int = 0, max_retries: int = 2, existing_usernames: Set[str] = None) -> Tuple[Optional[Dict], str, object]:
@@ -333,6 +470,7 @@ def scrape_single_profile_with_retry(ctx_maker, page, url: str, country: str, ba
 
     return None, "max_retries_exceeded", current_page
 
+
 # -------------------------
 # Orchestration
 # -------------------------
@@ -366,10 +504,27 @@ def scrape_tiktok_profiles(base_hashtag: str = BASE_HASHTAG, num_profiles: int =
             context.add_init_script("""
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
                 window.chrome = window.chrome || { runtime: {} };
+                const stopAutoplay = () => {
+                  try { for (const v of document.querySelectorAll('video')) { v.pause?.(); v.autoplay=false; v.preload='none'; } } catch(e){}
+                };
+                document.addEventListener('DOMContentLoaded', stopAutoplay, { once: true });
             """)
-            context.route("**/*", lambda route: route.abort()
-                          if route.request.resource_type in {"media", "font"}
-                          else route.continue_())
+            # reapply the same blocking rules on rebuild
+            VIDEO_EXTS = (".mp4", ".m4s", ".webm", ".m3u8", ".ts", ".mov", ".avi", ".flv", ".ogg", ".ogv")
+            IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".tiff", ".svg")
+            def should_abort(req):
+                url = req.url.lower()
+                rtype = req.resource_type
+                if rtype in {"document", "script", "stylesheet", "xhr", "fetch"}:
+                    if url.endswith(VIDEO_EXTS) or url.endswith(".gif"):
+                        return True
+                    return False
+                if rtype in {"image", "media", "font"}:
+                    return True
+                if url.endswith(VIDEO_EXTS) or url.endswith(".gif") or url.endswith(IMAGE_EXTS):
+                    return True
+                return False
+            context.route("**/*", lambda route: route.abort() if should_abort(route.request) else route.continue_())
             context.set_default_timeout(SEL_TIMEOUT_MS)
             context.set_default_navigation_timeout(PAGE_GOTO_TIMEOUT_MS)
             page = context.new_page()
