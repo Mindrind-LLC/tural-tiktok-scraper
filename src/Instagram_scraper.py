@@ -30,6 +30,7 @@ LOGIN_TIMEOUT_MS = 30_000      # 30s for login process
 INSTAGRAM_LOGIN_URL = "https://www.instagram.com/"
 INSTAGRAM_BASE_URL = "https://www.instagram.com/"
 BASE_HASHTAG = "crypto"
+HEADLESS = True  # Set to True for production
 
 # -------------------------
 # Helper Functions
@@ -131,7 +132,7 @@ def create_browser_context(
     browser = None
     try:
         browser = p.chromium.launch(
-            headless=False,  # Set to True for production
+            headless=HEADLESS,  # Set to True for production
             channel="chrome",  # Use system Chrome if available
             proxy=proxy_cfg,
             args=[
@@ -153,7 +154,7 @@ def create_browser_context(
     except Exception as e:
         logger.warning(f"Chrome channel not available: {e}")
         browser = p.chromium.launch(
-            headless=False,
+            headless=HEADLESS,
             proxy=proxy_cfg,
             args=[
                 "--incognito",
@@ -226,13 +227,48 @@ def create_browser_context(
         );
     """)
 
-    # Set timeouts
+    # --- Block heavy resources: images, videos, gifs, fonts (keep HTML/CSS/JS/XHR/Fetch) ---
+    VIDEO_EXTS = (".mp4", ".m4s", ".webm", ".m3u8", ".ts", ".mov", ".avi", ".flv", ".ogg", ".ogv")
+    # IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".tiff", ".svg")
+
+    def should_abort(req):
+        url = req.url.lower()
+        rtype = req.resource_type
+
+        # Always allow the core page + data calls so DOM can build
+        if rtype in {"document", "script", "stylesheet", "xhr", "fetch"}:
+            # but if a script/style URL is actually a media file, still block by extension
+            if url.endswith(VIDEO_EXTS) or url.endswith(".gif"):
+                return True
+            return False
+
+        # Block all standard images (covers GIFs as images too)
+        if rtype == "image":
+            return True
+
+        # Block media (covers audio/video streams)
+        if rtype == "media":
+            return True
+
+        # Block fonts to trim a bit more (optional)
+        if rtype == "font":
+            return True
+
+        # Extra safety: block by extension if something slips through as 'other'
+        if url.endswith(VIDEO_EXTS) or url.endswith(".gif"):
+            return True
+
+        return False
+
+    context.route("**/*", lambda route: route.abort() if should_abort(route.request) else route.continue_())
+
+    # Default timeouts
     context.set_default_timeout(SEL_TIMEOUT_MS)
     context.set_default_navigation_timeout(PAGE_GOTO_TIMEOUT_MS)
 
     page = context.new_page()
 
-    logger.info("✅ Browser context created successfully")
+    logger.info("✅ Playwright ready (proxy=%s)", proxy_cfg or "NONE")
     return p, browser, context, page
 
 
@@ -322,8 +358,6 @@ def perform_login(page: Page, username: str, password: str) -> bool:
         login_button = page.locator('button[type="submit"]')
         login_button.click()
         # Allow automation mode to bypass manual pause
-        if os.getenv("IG_SKIP_PROMPT", "0") != "1":
-            input("Press Enter to continue...")
 
         logger.info("✅ Login form submitted")
 
@@ -581,7 +615,7 @@ class InstagramScraper:
                 user_info["display_name"] = display_name
             except Exception:
                 pass
-            # input("Press Enter to continue...")
+
             # Try to get bio
             try:
                 bio = self.page.locator('textarea[name="biography"]').input_value(timeout=3000)
@@ -1076,14 +1110,14 @@ class IGInfluencerFinder:
         human_sleep(1.0, 2.0)
 
         hdr = _extract_counts_and_bio_from_header(self.page)
-        # input("Press Enter to continue...")
+
         followers = hdr.get("followers") or 0
         bio_text = hdr.get("bio") or None
         image_url = hdr.get("image_url")
         print("Bio:", bio_text)
-        print("Image URL:", image_url)
+
         print("Followers:", followers)
-        # print("Header data:", hdr)
+
         graphql_user = self._await_graphql_user()
         if graphql_user:
             followers = (
@@ -1112,10 +1146,10 @@ class IGInfluencerFinder:
             Likes=avg_likes,
             Profile_URL=url,
             Image_URL=image_url,
-            Hashtag=base_hashtag,     # <-- store the BASE hashtag here
+            Hashtag=base_hashtag.lower(),     # <-- store the BASE hashtag here
             Blacklist=False,
             Source="Instagram",
-            Country=(country.upper() if country else None),
+            Country=country.lower()
         )
 
         logger.info(

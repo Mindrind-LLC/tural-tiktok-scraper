@@ -4,12 +4,12 @@ import json
 import time
 import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import requests
 
 from src.Instagram_scraper import BASE_HASHTAG, InstagramScraper, run_influencer_scrape
 from src.utils import generate_country_hashtags
-from src.airtable import get_existing_usernames
+from src.airtable import get_active_hashtags, get_existing_usernames
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger("ig_cookie_seeder")
 
 ACCOUNTS_PATH = Path("accounts_proxies.json")
-PROFILES_PER_ACCOUNT = 5
+PROFILES_PER_ACCOUNT = 50
 WAIT_BETWEEN_ACCOUNTS = 120  # seconds
 SCRAPE_COUNTRIES = [
     "usa",
@@ -46,12 +46,63 @@ SCRAPE_COUNTRIES = [
     "indonesia",
     "singapore",
 ]
+DEFAULT_HASHTAG_CONFIGS: list[tuple[str, list[str]]] = [
+    (BASE_HASHTAG, [*SCRAPE_COUNTRIES]),
+]
 
 
 def load_accounts() -> list[dict]:
     if not ACCOUNTS_PATH.exists():
         raise FileNotFoundError(f"Accounts file not found: {ACCOUNTS_PATH}")
     return json.loads(ACCOUNTS_PATH.read_text(encoding="utf-8"))
+
+
+def load_hashtag_configs() -> list[tuple[str, list[str]]]:
+    """Return [(base_hashtag, countries...)] sourced from env or Airtable."""
+    env_value = os.getenv("IG_BASE_HASHTAGS", "").strip()
+    if env_value:
+        configs: list[tuple[str, list[str]]] = []
+        for raw_tag in env_value.split(","):
+            clean_tag = raw_tag.strip().lstrip("#")
+            if not clean_tag:
+                continue
+            configs.append((clean_tag.lower(), [*SCRAPE_COUNTRIES]))
+        if configs:
+            return configs
+
+    try:
+        airtable_configs = get_active_hashtags()
+        configs = []
+        for item in airtable_configs:
+            if not item:
+                continue
+
+            if isinstance(item, (list, tuple)):
+                if len(item) >= 2:
+                    base_tag, countries = item[0], item[1]
+                else:
+                    base_tag, countries = item[0], SCRAPE_COUNTRIES
+            else:
+                base_tag, countries = item, SCRAPE_COUNTRIES
+
+            clean_tag = (base_tag or "").strip().lstrip("#")
+            if not clean_tag:
+                continue
+
+            if isinstance(countries, str):
+                country_list = [c.strip() for c in countries.split(",") if c.strip()]
+            else:
+                country_list = list(countries or SCRAPE_COUNTRIES)
+
+            use_countries = country_list or SCRAPE_COUNTRIES
+            configs.append((clean_tag.lower(), [country.lower() for country in use_countries]))
+
+        if configs:
+            return configs
+    except Exception as exc:
+        logger.warning(f"⚠️ Failed to fetch active hashtags from Airtable: {exc}")
+
+    return [(tag, [*countries]) for tag, countries in DEFAULT_HASHTAG_CONFIGS]
 
 
 def _parse_http_proxy(proxy_url: str) -> Tuple[Optional[str], Optional[str]]:
@@ -84,7 +135,7 @@ def check_proxy_connectivity(proxy_url: str, timeout: float = 10.0) -> bool:
     return False
 
 
-def seed_account_cookies(account: dict) -> bool:
+def seed_account_cookies(account: dict, base_hashtag: str, countries: List[str]) -> bool:
     username = account.get("username")
     password = account.get("password")
     if not username or not password:
@@ -106,9 +157,12 @@ def seed_account_cookies(account: dict) -> bool:
     # Skip manual prompt to allow automation
     os.environ["IG_SKIP_PROMPT"] = os.environ.get("IG_SKIP_PROMPT", "0")
 
-    logger.info(f"➡️  Processing @{username} (proxy set: {'yes' if proxy else 'no'})")
+    logger.info(
+        f"➡️  Processing @{username} for base #{base_hashtag} (proxy set: {'yes' if proxy else 'no'})"
+    )
 
-    hashtags = generate_country_hashtags(BASE_HASHTAG, SCRAPE_COUNTRIES)
+    hashtag_countries = countries or SCRAPE_COUNTRIES
+    hashtags = generate_country_hashtags(base_hashtag, hashtag_countries)
 
     try:
         existing_usernames = {
@@ -130,39 +184,51 @@ def seed_account_cookies(account: dict) -> bool:
         ) as scraper:
             ok = scraper.login(username, password, use_saved_cookies=True)
             if not ok:
-                logger.error(f"❌ Login failed for @{username}")
+                logger.error(f"❌ Login failed for @{username} on #{base_hashtag}; skipping")
                 return False
 
-            logger.info(f"✅ Logged in as @{username}; starting scrape")
+            logger.info(f"✅ Logged in as @{username}; starting scrape for #{base_hashtag}")
 
             run_influencer_scrape(
                 scraper,
                 hashtags=hashtags,
                 max_profiles_total=PROFILES_PER_ACCOUNT,
-                base_hashtag=BASE_HASHTAG,
+                base_hashtag=base_hashtag,
                 existing_usernames=existing_usernames,
             )
 
-            logger.info(f"✅ Completed scraping for @{username}")
+            logger.info(f"✅ Completed scraping for @{username} on #{base_hashtag}")
             return True
     except Exception:
-        logger.exception(f"❌ Unexpected error during processing for @{username}")
+        logger.exception(
+            f"❌ Unexpected error during processing for @{username} on #{base_hashtag}"
+        )
         return False
 
 
-def main():
-    accounts = load_accounts()
+def process_accounts_for_hashtag(
+    base_hashtag: str, countries: List[str], accounts: List[dict]
+) -> int:
+    logger.info(
+        f"===== 🌟 Starting workflow for base hashtag #{base_hashtag} (countries={len(countries)}) ====="
+    )
     success = 0
     for i, acct in enumerate(accounts, 1):
-        logger.info(f"—— {i}/{len(accounts)} ——")
+        logger.info(f"—— {i}/{len(accounts)} —— #{base_hashtag}")
         try:
-            if seed_account_cookies(acct):
+            if seed_account_cookies(acct, base_hashtag, countries):
                 success += 1
+            else:
+                logger.warning(
+                    f"⏭️  Skipping @{acct.get('username')} for #{base_hashtag} after failure"
+                )
         except KeyboardInterrupt:
             logger.warning("⚠️ Interrupted by user; stopping seeding")
-            break
+            raise
         except Exception as e:
-            logger.exception(f"❌ Unexpected error for @{acct.get('username')}: {e}")
+            logger.exception(
+                f"❌ Unexpected error for @{acct.get('username')} on #{base_hashtag}: {e}"
+            )
 
         if i < len(accounts):
             logger.info(
@@ -170,7 +236,39 @@ def main():
             )
             time.sleep(WAIT_BETWEEN_ACCOUNTS)
 
-    logger.info(f"🎉 Done. Cookies saved for {success}/{len(accounts)} accounts.")
+    logger.info(
+        f"🎉 Done. Cookies saved for {success}/{len(accounts)} accounts on #{base_hashtag}."
+    )
+    return success
+
+
+def main():
+    accounts = load_accounts()
+    hashtag_configs = load_hashtag_configs()
+
+    logger.info(
+        f"🚀 Seeding cookies for {len(accounts)} accounts across {len(hashtag_configs)} base hashtag(s)"
+    )
+
+    if not accounts:
+        logger.warning("⚠️ No accounts found; nothing to do.")
+        return
+
+    if not hashtag_configs:
+        logger.warning("⚠️ No base hashtags configured; nothing to do.")
+        return
+
+    for idx, (base_hashtag, countries) in enumerate(hashtag_configs, 1):
+        logger.info(
+            f"===== Hashtag {idx}/{len(hashtag_configs)} -> #{base_hashtag} (countries={len(countries)}) ====="
+        )
+        try:
+            process_accounts_for_hashtag(base_hashtag, countries, accounts)
+        except KeyboardInterrupt:
+            logger.warning("⚠️ Interrupted by user; stopping hashtag workflow")
+            break
+
+    logger.info("🏁 Workflow finished.")
 
 
 if __name__ == "__main__":
