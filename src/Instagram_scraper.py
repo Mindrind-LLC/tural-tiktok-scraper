@@ -581,12 +581,14 @@ class InstagramScraper:
                 user_info["display_name"] = display_name
             except Exception:
                 pass
-
+            # input("Press Enter to continue...")
             # Try to get bio
             try:
                 bio = self.page.locator('textarea[name="biography"]').input_value(timeout=3000)
                 user_info["bio"] = bio
+                print("Bio:", bio)
             except Exception:
+                print("No bio found")
                 pass
 
             logger.info(f"✅ Retrieved user info: {user_info}")
@@ -658,17 +660,21 @@ def _first_text(locator, timeout=1500) -> str:
 
 def _extract_counts_and_bio_from_header(page: Page) -> Dict[str, Any]:
     """
-    Extract posts/followers/following + username (from DOM) + bio + image url
-    based on the header HTML you provided.
+    Extract posts/followers/following + username (from DOM) + bio + image url.
+    Uses legacy selectors/heuristics that have proven more stable across IG UI tests.
     """
-    out = {
+    out: Dict[str, Any] = {
         "username_dom": None,
+        "full_name": None,
         "bio": "",
         "image_url": None,
         "posts": None,
         "followers": None,
         "following": None,
     }
+
+    header = page.locator("header").first
+    header_txt = safe_text(header)
 
     # username from header h2 > span (e.g., mastercryptohq)
     try:
@@ -683,55 +689,81 @@ def _extract_counts_and_bio_from_header(page: Page) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # counts (li list: posts, followers, following)
+    # Prefer counts from og:description which tends to be consistent
+    followers = following = posts = None
     try:
-        li_nodes = page.locator("header ul li")
-        total = li_nodes.count()
-        for i in range(total):
-            li = li_nodes.nth(i)
-            text = (li.inner_text() or "").lower()
-            # prefer numeric from title attr if present (e.g., title="242,395")
-            title_num = _first_attr(li.locator("[title]"), "title")
-            # else take first numeric token (might be 242K)
-            if not title_num:
-                m = re.search(r"([\d.,]+[kKmM]?)", text)
-                title_num = m.group(1) if m else None
-
-            if "post" in text:
-                out["posts"] = parse_count(title_num) if title_num else None
-            elif "follower" in text:
-                out["followers"] = parse_count(title_num) if title_num else None
-            elif "following" in text:
-                out["following"] = parse_count(title_num) if title_num else None
+        og = page.locator('meta[property="og:description"]').get_attribute("content")
+        if og:
+            matches = re.findall(r"([\d,.]+[KMB]?)\s+(Followers|Following|Posts?)", og, flags=re.I)
+            for number, label in matches:
+                value = parse_count(number)
+                lbl = label.lower()
+                if "follower" in lbl and followers is None:
+                    followers = value
+                elif "following" in lbl and following is None:
+                    following = value
+                elif "post" in lbl and posts is None:
+                    posts = value
     except Exception:
         pass
 
-    # bio block: the span that contains multi-line profile text right under the counts
-    # (your dump shows a span with classes: _ap3a _aaco _aacu _aacx _aad7 _aade)
+    # Fallback to header text parsing if og:description missing/partial
+    if followers is None or following is None or posts is None:
+        def parse_from_header(label: str) -> Optional[int]:
+            m = re.search(rf"([\d,.]+[KMB]?)\s+{label}", header_txt, flags=re.I)
+            if not m:
+                return None
+            return parse_count(m.group(1))
+
+        followers = followers or parse_from_header("Followers?")
+        following = following or parse_from_header("Following")
+        posts = posts or parse_from_header("Posts?")
+
+    out["followers"] = followers
+    out["following"] = following
+    out["posts"] = posts
+
+    # Full name and bio using the older selectors
     try:
-        bio_span = page.locator('header span._ap3a._aaco._aacu._aacx._aad7._aade')
-        bio_txt = _first_text(bio_span)
-        out["bio"] = _clean_text(bio_txt)
+        name_node = page.locator("header section h1, header section span").first
+        full_name = (name_node.inner_text(timeout=1500) or "").strip()
+        out["full_name"] = full_name or None
     except Exception:
         pass
 
-    # fallback bio if still empty: take the second/third header section and strip UI labels
-    if not out["bio"]:
+    bio_text = ""
+    try:
+        bio_area = page.locator("header ~ div, section:has(a[rel*='nofollow'])")
+        if bio_area.count() > 0:
+            bio_text = safe_text(bio_area.first).strip()
+    except Exception:
+        bio_text = ""
+
+    # Additional fallback to earlier span-based selector if needed
+    if not bio_text:
+        try:
+            bio_span = page.locator('header span._ap3a._aaco._aacu._aacx._aad7._aade')
+            bio_text = _first_text(bio_span)
+        except Exception:
+            bio_text = ""
+
+    bio_text = _clean_text(bio_text)
+    if not bio_text:
         try:
             sections = page.locator("header section")
-            # heuristic: the section after counts often holds the bio snippet
             if sections.count() >= 3:
                 txt = sections.nth(2).inner_text(timeout=1500) or ""
-                # remove common UI words
                 bad = ("follow", "message", "similar accounts", "options", "threads", "highlights")
-                keep = []
-                for ln in (txt.splitlines()):
-                    l = ln.strip()
-                    if l and not any(b in l.lower() for b in bad):
-                        keep.append(l)
-                out["bio"] = _clean_text("\n".join(keep))
+                keep: list[str] = []
+                for ln in txt.splitlines():
+                    line = ln.strip()
+                    if line and not any(b in line.lower() for b in bad):
+                        keep.append(line)
+                bio_text = _clean_text("\n".join(keep))
         except Exception:
             pass
+
+    out["bio"] = bio_text
 
     return out
 
@@ -802,6 +834,43 @@ def _sample_average_likes(page: Page, max_posts: int = 4) -> Optional[int]:
     return None
 
 
+def _graphql_extract_user(payload: Optional[dict]) -> Optional[dict]:
+    """Extract a user dict from assorted Instagram GraphQL payloads."""
+
+    if not payload or not isinstance(payload, dict):
+        return None
+
+    # Many responses store useful data under a top-level "data" key.
+    data = payload.get("data") if "data" in payload else payload
+
+    # Common modern endpoint: data -> xdt_api__v1__users__web_profile_info -> user
+    if isinstance(data, dict):
+        if "user" in data and isinstance(data["user"], dict):
+            return data["user"]
+
+        xdt_profile = data.get("xdt_api__v1__users__web_profile_info")
+        if isinstance(xdt_profile, dict):
+            user = xdt_profile.get("user")
+            if isinstance(user, dict):
+                return user
+            # Sometimes the profile payload is already the user dict
+            if any(k in xdt_profile for k in ("username", "edge_follow")):
+                return xdt_profile
+
+        # Legacy graphene-style payloads
+        graphql_user = data.get("graphql")
+        if isinstance(graphql_user, dict):
+            user = graphql_user.get("user")
+            if isinstance(user, dict):
+                return user
+
+    # Fallback if payload itself already has user-style keys
+    if any(k in payload for k in ("username", "edge_follow", "biography")):
+        return payload
+
+    return None
+
+
 class IGInfluencerFinder:
     def __init__(self, page: Page, base_delay=(0.8, 2.0), max_actions_per_min=10):
         self.page = page
@@ -810,14 +879,23 @@ class IGInfluencerFinder:
         self.graphql_latest = {}
         self._attach_graphql_sniffer()
 
+    def _await_graphql_user(self, timeout: float = 6.0) -> Optional[dict]:
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            user = _graphql_extract_user(self.graphql_latest)
+            if user:
+                return user
+            time.sleep(0.2)
+        return None
+
     def _attach_graphql_sniffer(self):
         def on_response(resp):
             try:
                 url = resp.url
                 if "/api/graphql" in url and "application/json" in resp.headers.get("content-type", ""):
                     data = resp.json()
-                    if isinstance(data, dict) and "data" in data:
-                        self.graphql_latest = data["data"]
+                    if isinstance(data, dict):
+                        self.graphql_latest = data
             except Exception:
                 pass
         self.page.on("response", on_response)
@@ -998,9 +1076,32 @@ class IGInfluencerFinder:
         human_sleep(1.0, 2.0)
 
         hdr = _extract_counts_and_bio_from_header(self.page)
+        # input("Press Enter to continue...")
         followers = hdr.get("followers") or 0
         bio_text = hdr.get("bio") or None
         image_url = hdr.get("image_url")
+        print("Bio:", bio_text)
+        print("Image URL:", image_url)
+        print("Followers:", followers)
+        # print("Header data:", hdr)
+        graphql_user = self._await_graphql_user()
+        if graphql_user:
+            followers = (
+                graphql_user.get("edge_followed_by", {}).get("count")
+                or graphql_user.get("follower_count")
+                or followers
+            )
+            bio_text = graphql_user.get("biography") or bio_text
+            image_url = (
+                graphql_user.get("profile_pic_url_hd")
+                or graphql_user.get("profile_pic_url")
+                or image_url
+            )
+
+            # Keep the DOM helper in sync for subsequent scrapes/dedupes
+            hdr["followers"] = followers
+            hdr["bio"] = bio_text
+            hdr["image_url"] = image_url
 
         avg_likes = _sample_average_likes(self.page, max_posts=4) or 0
 

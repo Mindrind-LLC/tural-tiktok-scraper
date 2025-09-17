@@ -5,10 +5,11 @@ import time
 import logging
 from pathlib import Path
 from typing import Optional, Tuple
-
 import requests
 
-from src.Instagram_scraper import InstagramScraper
+from src.Instagram_scraper import BASE_HASHTAG, InstagramScraper, run_influencer_scrape
+from src.utils import generate_country_hashtags
+from src.airtable import get_existing_usernames
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,6 +22,30 @@ logging.basicConfig(
 logger = logging.getLogger("ig_cookie_seeder")
 
 ACCOUNTS_PATH = Path("accounts_proxies.json")
+PROFILES_PER_ACCOUNT = 5
+WAIT_BETWEEN_ACCOUNTS = 120  # seconds
+SCRAPE_COUNTRIES = [
+    "usa",
+    "uk",
+    "canada",
+    "australia",
+    "germany",
+    "france",
+    "italy",
+    "spain",
+    "japan",
+    "china",
+    "india",
+    "brazil",
+    "mexico",
+    "russia",
+    "southkorea",
+    "uae",
+    "saudiarabia",
+    "turkey",
+    "indonesia",
+    "singapore",
+]
 
 
 def load_accounts() -> list[dict]:
@@ -81,25 +106,48 @@ def seed_account_cookies(account: dict) -> bool:
     # Skip manual prompt to allow automation
     os.environ["IG_SKIP_PROMPT"] = os.environ.get("IG_SKIP_PROMPT", "0")
 
-    logger.info(f"➡️  Seeding cookies for @{username} (proxy set: {'yes' if proxy else 'no'})")
+    logger.info(f"➡️  Processing @{username} (proxy set: {'yes' if proxy else 'no'})")
 
-    ok = InstagramScraper.login_with_credentials(
-        username,
-        password,
-        proxy=proxy or None,
-        locale=locale,
-        timezone=timezone,
-        user_agent=user_agent,
-        use_saved_cookies=True,
-        cookies_dir="cookies",
-    )
+    hashtags = generate_country_hashtags(BASE_HASHTAG, SCRAPE_COUNTRIES)
 
-    if ok:
-        logger.info(f"✅ Cookies saved for @{username}")
-        return True
+    try:
+        existing_usernames = {
+            uname.lower()
+            for uname in (get_existing_usernames(source="Instagram") or [])
+        }
+        logger.info(f"📋 Loaded {len(existing_usernames)} existing Instagram usernames")
+    except Exception as exc:
+        logger.warning(f"⚠️ Failed to fetch existing usernames: {exc}")
+        existing_usernames = set()
 
-    logger.error(f"❌ Login failed for @{username}")
-    return False
+    try:
+        with InstagramScraper(
+            cookies_dir="cookies",
+            proxy=proxy or None,
+            user_agent=user_agent,
+            locale=locale,
+            timezone=timezone,
+        ) as scraper:
+            ok = scraper.login(username, password, use_saved_cookies=True)
+            if not ok:
+                logger.error(f"❌ Login failed for @{username}")
+                return False
+
+            logger.info(f"✅ Logged in as @{username}; starting scrape")
+
+            run_influencer_scrape(
+                scraper,
+                hashtags=hashtags,
+                max_profiles_total=PROFILES_PER_ACCOUNT,
+                base_hashtag=BASE_HASHTAG,
+                existing_usernames=existing_usernames,
+            )
+
+            logger.info(f"✅ Completed scraping for @{username}")
+            return True
+    except Exception:
+        logger.exception(f"❌ Unexpected error during processing for @{username}")
+        return False
 
 
 def main():
@@ -115,8 +163,12 @@ def main():
             break
         except Exception as e:
             logger.exception(f"❌ Unexpected error for @{acct.get('username')}: {e}")
-        # Small spacing between accounts
-        time.sleep(1.5)
+
+        if i < len(accounts):
+            logger.info(
+                f"⏳ Waiting {WAIT_BETWEEN_ACCOUNTS} seconds before switching accounts"
+            )
+            time.sleep(WAIT_BETWEEN_ACCOUNTS)
 
     logger.info(f"🎉 Done. Cookies saved for {success}/{len(accounts)} accounts.")
 
