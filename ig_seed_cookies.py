@@ -22,8 +22,8 @@ logging.basicConfig(
 logger = logging.getLogger("ig_cookie_seeder")
 
 ACCOUNTS_PATH = Path("accounts_proxies.json")
-PROFILES_PER_ACCOUNT = 2
-WAIT_BETWEEN_ACCOUNTS = 60  # seconds
+PROFILES_PER_ACCOUNT = 50
+WAIT_BETWEEN_ACCOUNTS = 120  # seconds
 SCRAPE_COUNTRIES = [
     "usa",
     "uk",

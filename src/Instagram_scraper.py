@@ -948,7 +948,8 @@ class IGInfluencerFinder:
         - the global target is reached.
         Dedupes against Airtable usernames and the per-run global set.
         """
-        url = f"https://www.instagram.com/explore/tags/{hashtag.strip('#')}/"
+        # url = f"https://www.instagram.com/explore/tags/{hashtag.strip('#')}/"
+        url = f"https://www.instagram.com/explore/search/keyword/?q={hashtag.strip('#')}"
         logger.info(f"🔎 Phase 1 - #{hashtag}: {url}")
         self.page.goto(url, wait_until="domcontentloaded", timeout=PAGE_GOTO_TIMEOUT_MS)
         human_sleep(*self.base_delay)
