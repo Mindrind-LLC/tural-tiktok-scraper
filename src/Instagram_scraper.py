@@ -1200,9 +1200,12 @@ def run_influencer_scrape(
     max_profiles_total: int = 200,
     base_hashtag: str = BASE_HASHTAG,
     existing_usernames: set = set(),
+    min_followers: int = 0,
 ):
     page = scraper.page
     finder = IGInfluencerFinder(page)
+
+    min_followers = int(min_followers or 0)
 
     # existing from Airtable
     try:
@@ -1262,11 +1265,21 @@ def run_influencer_scrape(
         # derive base hashtag to save
         tag_base = extract_base_hashtag(tag) or base_hashtag
 
-        logger.info(f"[PH2] {saved + 1}/{max_profiles_total} -> @{username} (#{tag} → save as #{tag_base})")
-        prof = finder.scrape_profile(username, base_hashtag=tag_base, country=country)
+        logger.info(
+            f"[PH2] {saved + 1}/{max_profiles_total} -> @{username} (#{tag} → save as #{tag_base})"
+        )
+        prof = finder.scrape_profile(username, base_hashtag=base_hashtag, country=country)
         if not prof:
             logger.warning(f"⚠️ Failed to scrape @{username}")
             human_sleep(1.2, 2.4)
+            continue
+
+        follower_count = prof.Followers or 0
+        if follower_count < min_followers:
+            logger.info(
+                f"⏭️ Skip @{username} — followers {follower_count} < minimum {min_followers}"
+            )
+            human_sleep(0.8, 1.6)
             continue
 
         try:
