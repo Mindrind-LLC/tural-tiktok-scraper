@@ -127,7 +127,7 @@ def make_browser_context():
         browser = p.chromium.launch(
             headless=HEADLESS,                 # pass a boolean
             channel="chrome",                  # use system Chrome if available
-            proxy=proxy_cfg,                 # <-- enable if you want proxy here
+            # proxy=proxy_cfg,                 # <-- enable if you want proxy here
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
@@ -141,7 +141,7 @@ def make_browser_context():
         logger.warning(f"Chrome channel not available: {e}")
         browser = p.chromium.launch(
             headless=HEADLESS,                 # pass a boolean
-            proxy=proxy_cfg,                # <-- enable if you want proxy here
+            # proxy=proxy_cfg,                # <-- enable if you want proxy here
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
